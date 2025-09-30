@@ -11,10 +11,12 @@
     },
     {
       "name": "Frontend: Open in Browser",
-      "type": "pwa-chrome",
+      "type": "msedge",
       "request": "launch",
       "url": "http://localhost:5173",
-      "webRoot": "${workspaceFolder}/frontend"
+      "webRoot": "${workspaceFolder}/frontend",
+      "preLaunchTask": "frontend: dev",
+      "userDataDir": true
     }
   ],
   "compounds": [

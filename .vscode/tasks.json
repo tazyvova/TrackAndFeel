@@ -6,8 +6,18 @@
       "type": "npm",
       "script": "dev",
       "path": "frontend",
-      "problemMatcher": [],
-      "isBackground": true
+      "isBackground": true,
+      "presentation": { "reveal": "always", "panel": "dedicated" },
+      "problemMatcher": {
+        "owner": "vite",
+        "fileLocation": "auto",
+        "pattern": [{ "regexp": "." }],
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": ".*(VITE|vite).*",
+          "endsPattern": ".*Local:\\s*http://.*:5173/.*"
+        }
+      }
     }
   ]
 }
