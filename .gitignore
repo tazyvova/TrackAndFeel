@@ -1,0 +1,14 @@
+# Node / Vite
+node_modules
+dist
+# Env
+.env
+.env.*
+# OS
+.DS_Store
+Thumbs.db
+# Logs
+*.log
+# Go
+bin
+coverage.out

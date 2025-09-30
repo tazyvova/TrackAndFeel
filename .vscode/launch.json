@@ -1,0 +1,26 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Go: Backend",
+      "type": "go",
+      "request": "launch",
+      "mode": "auto",
+      "program": "${workspaceFolder}/backend/cmd/server",
+      "env": { "PORT": "8080" }
+    },
+    {
+      "name": "Frontend: Open in Browser",
+      "type": "pwa-chrome",
+      "request": "launch",
+      "url": "http://localhost:5173",
+      "webRoot": "${workspaceFolder}/frontend"
+    }
+  ],
+  "compounds": [
+    {
+      "name": "Dev: Backend + Frontend",
+      "configurations": ["Go: Backend", "Frontend: Open in Browser"]
+    }
+  ]
+}
