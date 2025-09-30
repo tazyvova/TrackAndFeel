@@ -1,3 +1,3 @@
-module training-insights/backend
+module TrackAndFeel/backend
 
 go 1.22
