@@ -1,0 +1,54 @@
+version: "3.9"
+
+services:
+  db:
+    image: postgis/postgis:16-3.4
+    container_name: trackandfeel-db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: training
+    ports:
+      - "5432:5432"            # host:container (optional if you access DB from host tools)
+    volumes:
+      - dbdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d training"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  backend:
+    image: golang:1.22
+    container_name: trackandfeel-backend
+    working_dir: /app
+    volumes:
+      - ./backend:/app         # bind-mount your code for hot reload with 'go run'
+    command: sh -c "go mod download && go run ./cmd/server"
+    environment:
+      PORT: "8080"
+      DB_HOST: db
+      DB_PORT: "5432"
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      DB_NAME: training
+    ports:
+      - "8080:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  frontend:
+    image: node:20
+    container_name: trackandfeel-frontend
+    working_dir: /app
+    volumes:
+      - ./frontend:/app        # bind-mount so changes reflect instantly
+    command: sh -c "npm ci || npm i && npm run dev -- --host"
+    ports:
+      - "5173:5173"            # Vite dev server
+    depends_on:
+      - backend
+
+volumes:
+  dbdata:
