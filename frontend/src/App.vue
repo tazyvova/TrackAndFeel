@@ -1,38 +1,20 @@
-<script setup lang="ts">
-async function ping() {
-  const res = await fetch("/healthz");
-  const txt = await res.text();
-  alert("Backend says: " + txt);
-}
-</script>
-
 <template>
-  <main
+  <header
     style="
-      max-width: 900px;
-      margin: 40px auto;
-      font-family: system-ui, sans-serif;
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      padding: 12px 16px;
+      border-bottom: 1px solid #eee;
     "
   >
-    <h1>Track and feel</h1>
-    <p>This is the Vue + Vite starter wired to a Go backend.</p>
-    <button @click="ping">Check backend /healthz</button>
-
-    <h2 style="margin-top: 24px">Activities</h2>
-    <pre style="background: #f6f6f6; padding: 12px; border-radius: 8px">
-GET /api/activities → []
-    </pre>
+    <h1 style="margin: 0; font-size: 18px">TrackAndFeel</h1>
+    <nav style="display: flex; gap: 10px">
+      <router-link to="/activities">Activities</router-link>
+      <router-link to="/upload">Upload</router-link>
+    </nav>
+  </header>
+  <main style="padding: 16px">
+    <router-view />
   </main>
 </template>
-
-<style scoped>
-button {
-  padding: 8px 14px;
-  border-radius: 8px;
-  border: none;
-  cursor: pointer;
-}
-button:hover {
-  filter: brightness(0.95);
-}
-</style>
