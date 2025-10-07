@@ -1,34 +1,21 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { onMounted } from 'vue'
+import { useActivitiesStore } from '../stores/activities'
 
-const items = ref([])
-const loading = ref(false)
-const error = ref('')
+const store = useActivitiesStore()
 
-async function load() {
-  loading.value = true
-  error.value = ''
-  try {
-    const res = await fetch('/api/activities?limit=20')
-    if (!res.ok) throw new Error(`HTTP ${res.status}`)
-    const data = await res.json()
-    items.value = data.items || []
-  } catch (e) {
-    error.value = String(e)
-  } finally {
-    loading.value = false
-  }
-}
-
-onMounted(load)
+onMounted(() => {
+  if (!store.items.length) store.fetchList(20, 0)
+})
 </script>
 
 <template>
   <h2>Activities</h2>
-  <p v-if="loading">Loading…</p>
-  <p v-if="error" style="color: #b00">{{ error }}</p>
-  <ul v-if="items.length">
-    <li v-for="a in items" :key="a.id" style="margin: 6px 0">
+  <p v-if="store.loading">Loading…</p>
+  <p v-if="store.error" style="color: #b00">{{ store.error }}</p>
+
+  <ul v-if="store.items.length">
+    <li v-for="a in store.items" :key="a.id" style="margin: 6px 0">
       <router-link :to="`/activities/${a.id}`">
         {{ new Date(a.started_at).toLocaleString() }}
       </router-link>
@@ -36,5 +23,5 @@ onMounted(load)
       <span v-if="a.avg_hr"> — avg HR {{ a.avg_hr }}</span>
     </li>
   </ul>
-  <p v-else-if="!loading">No activities yet.</p>
+  <p v-else-if="!store.loading">No activities yet.</p>
 </template>
