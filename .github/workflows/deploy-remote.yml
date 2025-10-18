@@ -21,10 +21,14 @@ jobs:
           host: ${{ secrets.VDS_HOST }}
           username: ${{ secrets.VDS_USER }}
           key: ${{ secrets.VDS_SSH_KEY }}
+          passphrase: ${{ secrets.VDS_SSH_PASSPHRASE }}
+          script_stop: true
+          command_timeout: 15m
           script: |
-            set -e
-            cd ${{ secrets.VDS_WORKDIR }}   # e.g., /root/apps/trackandfeel
-            docker login ghcr.io -u ${{ github.actor }} -p ${{ secrets.GITHUB_TOKEN }}
+            set -euo pipefail
+            cd "${{ secrets.VDS_WORKDIR }}"
+            # Login to GHCR safely (token is masked)
+            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
             docker compose -f docker-compose.prod.yml pull
             docker compose -f docker-compose.prod.yml up -d --no-build
             docker compose -f docker-compose.prod.yml ps
