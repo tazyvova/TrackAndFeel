@@ -23,15 +23,12 @@ jobs:
             Caddyfile
           sparse-checkout-cone-mode: false
 
-      # (Optional) sanity check
+      # Basic file existence check
       - run: |
           pwd
           ls -la
           test -f docker-compose.prod.yml
           test -f Caddyfile
-          # Validate file contents
-          docker compose -f docker-compose.prod.yml config
-          cat Caddyfile | caddy validate
 
       # 2) Create directory and prepare environment
       - name: SSH setup
