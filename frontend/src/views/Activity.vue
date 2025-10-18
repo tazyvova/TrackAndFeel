@@ -63,9 +63,9 @@ const speedSeries = computed(() => {
     <!-- unit toggle -->
     <div style="margin: 8px 0; display: flex; gap: 8px; align-items: center">
       <span>Speed units:</span>
-      <button @click="store.setUnit('mps')" :disabled="store.unit === 'mps'">m/s</button>
-      <button @click="store.setUnit('kmh')" :disabled="store.unit === 'kmh'">km/h</button>
-      <button @click="store.setUnit('pace')" :disabled="store.unit === 'pace'">min/km</button>
+      <button :disabled="store.unit === 'mps'" @click="store.setUnit('mps')">m/s</button>
+      <button :disabled="store.unit === 'kmh'" @click="store.setUnit('kmh')">km/h</button>
+      <button :disabled="store.unit === 'pace'" @click="store.setUnit('pace')">min/km</button>
     </div>
 
     <TrackMap :coords="detail.geojson.geometry.coordinates" />
@@ -81,19 +81,19 @@ const speedSeries = computed(() => {
               ? 'Speed (km/h)'
               : 'Speed (m/s)'
         "
-        :yLabel="store.unit === 'pace' ? 'min/km' : store.unit === 'kmh' ? 'km/h' : 'm/s'"
+        :y-label="store.unit === 'pace' ? 'min/km' : store.unit === 'kmh' ? 'km/h' : 'm/s'"
       />
       <TimeSeriesChart
         :labels="detail.series.time_iso"
         :series="detail.series.hr"
         title="Heart Rate"
-        yLabel="bpm"
+        y-label="bpm"
       />
       <TimeSeriesChart
         :labels="detail.series.time_iso"
         :series="detail.series.elevation"
         title="Elevation"
-        yLabel="m"
+        y-label="m"
       />
     </section>
   </div>

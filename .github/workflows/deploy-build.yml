@@ -3,6 +3,10 @@ name: Build & Push Images
 on:
   push:
     branches: [master]
+    paths:
+      - "backend/**"
+      - "frontend/**"
+      - ".github/workflows/**"
 
 permissions:
   contents: read
@@ -19,12 +23,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Derive tags
-        id: meta
-        run: |
-          SHORT_SHA="${GITHUB_SHA::7}"
-          echo "backend_tags=latest,sha-${SHORT_SHA}" >> $GITHUB_OUTPUT
-          echo "frontend_tags=latest,sha-${SHORT_SHA}" >> $GITHUB_OUTPUT
+      # Make a short tag like sha-abc1234
+      - name: Derive short SHA
+        run: echo "SHORT_SHA=sha-${GITHUB_SHA::7}" >> $GITHUB_ENV
 
       - name: Login to GHCR
         uses: docker/login-action@v3
@@ -33,20 +34,20 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build & push backend
+      - name: Build & push backend image
         uses: docker/build-push-action@v6
         with:
           context: ./backend
           push: true
           tags: |
             ${{ env.IMAGE_BACKEND }}:latest
-            ${{ env.IMAGE_BACKEND }}:${{ steps.meta.outputs.backend_tags##*, }}
+            ${{ env.IMAGE_BACKEND }}:${{ env.SHORT_SHA }}
 
-      - name: Build & push frontend
+      - name: Build & push frontend image
         uses: docker/build-push-action@v6
         with:
           context: ./frontend
           push: true
           tags: |
             ${{ env.IMAGE_FRONTEND }}:latest
-            ${{ env.IMAGE_FRONTEND }}:${{ steps.meta.outputs.frontend_tags##*, }}
+            ${{ env.IMAGE_FRONTEND }}:${{ env.SHORT_SHA }}
