@@ -15,6 +15,36 @@ jobs:
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     steps:
+      # 1) Get only needed files into the runner workspace
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            docker-compose.prod.yml
+            Caddyfile
+          sparse-checkout-cone-mode: false
+
+      # (Optional) sanity check
+      - run: |
+          pwd
+          ls -la
+          test -f docker-compose.prod.yml
+          test -f Caddyfile
+          # Validate file contents
+          docker compose -f docker-compose.prod.yml config
+          cat Caddyfile | caddy validate
+
+      # 2) Create directory and prepare environment
+      - name: SSH setup
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VDS_HOST }}
+          username: ${{ secrets.VDS_USER }}
+          key: ${{ secrets.VDS_SSH_KEY }}
+          passphrase: ${{ secrets.VDS_SSH_PASSPHRASE }}
+          script: |
+            mkdir -p "${{ secrets.VDS_WORKDIR }}"
+
+      # 3) Upload infra files to the VDS
       - name: Sync compose & configs to VDS
         uses: appleboy/scp-action@v0.1.7
         with:
@@ -25,9 +55,10 @@ jobs:
           source: |
             docker-compose.prod.yml
             Caddyfile
-            backend/Dockerfile
-            frontend/Dockerfile
           target: ${{ secrets.VDS_WORKDIR }}
+          overwrite: true
+
+      # 4) Deploy via SSH
       - name: SSH into VDS and deploy
         uses: appleboy/ssh-action@v1.0.3
         with:
@@ -40,7 +71,6 @@ jobs:
           script: |
             set -euo pipefail
             cd "${{ secrets.VDS_WORKDIR }}"
-            # Login to GHCR safely (token is masked)
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
             docker compose -f docker-compose.prod.yml pull
             docker compose -f docker-compose.prod.yml up -d --no-build
