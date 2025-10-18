@@ -16,7 +16,9 @@ const error = computed(() => store.error)
 onMounted(async () => {
   try {
     detail.value = await store.fetchDetail(id)
-  } catch {}
+  } catch {
+    console.error(store.error)
+  }
 })
 
 // conversions for speed series
