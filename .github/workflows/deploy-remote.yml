@@ -15,6 +15,19 @@ jobs:
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     steps:
+      - name: Sync compose & configs to VDS
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.VDS_HOST }}
+          username: ${{ secrets.VDS_USER }}
+          key: ${{ secrets.VDS_SSH_KEY }}
+          passphrase: ${{ secrets.VDS_SSH_PASSPHRASE }}
+          source: |
+            docker-compose.prod.yml
+            Caddyfile
+            backend/Dockerfile
+            frontend/Dockerfile
+          target: ${{ secrets.VDS_WORKDIR }}
       - name: SSH into VDS and deploy
         uses: appleboy/ssh-action@v1.0.3
         with:
