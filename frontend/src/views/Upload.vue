@@ -22,9 +22,9 @@ async function onSubmit(e) {
     const res = await fetch('/api/upload', { method: 'POST', body: form })
     if (!res.ok) throw new Error(`Upload failed: HTTP ${res.status}`)
     const data = await res.json()
-    msg.value = 'Uploaded. New ID: ${data.id}'
+    msg.value = `Uploaded. New ID: ${data.id}`
     // go view it
-    router.push('/activities/${data.id}')
+    router.push(`/activities/${data.id}`)
   } catch (err) {
     msg.value = String(err)
   } finally {
