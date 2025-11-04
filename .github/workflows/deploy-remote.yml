@@ -49,9 +49,7 @@ jobs:
           username: ${{ secrets.VDS_USER }}
           key: ${{ secrets.VDS_SSH_KEY }}
           passphrase: ${{ secrets.VDS_SSH_PASSPHRASE }}
-          source: |
-            ./docker-compose.prod.yml
-            ./Caddyfile
+          source: "docker-compose.prod.yml,Caddyfile"
           target: ${{ secrets.VDS_WORKDIR }}
           overwrite: true
 
