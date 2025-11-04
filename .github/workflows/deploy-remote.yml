@@ -23,13 +23,6 @@ jobs:
             Caddyfile
           sparse-checkout-cone-mode: false
 
-      # Basic file existence check
-      - run: |
-          pwd
-          ls -la
-          test -f docker-compose.prod.yml
-          test -f Caddyfile
-
       # 2) Create directory and prepare environment
       - name: SSH setup
         uses: appleboy/ssh-action@v1.0.3
@@ -41,6 +34,13 @@ jobs:
           script: |
             mkdir -p "${{ secrets.VDS_WORKDIR }}"
 
+      # Basic file existence check
+      - run: |
+          pwd
+          ls -la
+          test -f docker-compose.prod.yml
+          test -f Caddyfile
+
       # 3) Upload infra files to the VDS
       - name: Sync compose & configs to VDS
         uses: appleboy/scp-action@v0.1.7
@@ -50,9 +50,12 @@ jobs:
           key: ${{ secrets.VDS_SSH_KEY }}
           passphrase: ${{ secrets.VDS_SSH_PASSPHRASE }}
           source: |
-            docker-compose.prod.yml
-            Caddyfile
+            ./docker-compose.prod.yml
+            ./Caddyfile
           target: ${{ secrets.VDS_WORKDIR }}
+          overwrite: true
+
+      # 4) Deploy via SSH
           overwrite: true
 
       # 4) Deploy via SSH
