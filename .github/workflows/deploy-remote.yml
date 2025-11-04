@@ -56,9 +56,6 @@ jobs:
           overwrite: true
 
       # 4) Deploy via SSH
-          overwrite: true
-
-      # 4) Deploy via SSH
       - name: SSH into VDS and deploy
         uses: appleboy/ssh-action@v1.0.3
         with:
