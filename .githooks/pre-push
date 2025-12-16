@@ -1,0 +1,19 @@
+#!/bin/sh
+
+branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null)
+
+if [ -z "$branch" ]; then
+  echo "Unable to determine the current branch. Push aborted." >&2
+  exit 1
+fi
+
+case "$branch" in
+  codex/*|master)
+    exit 0
+    ;;
+  *)
+    echo "Pushes are restricted to branches named codex/* or master (current: $branch)." >&2
+    echo "Create or switch to a codex/* branch or master before pushing." >&2
+    exit 1
+    ;;
+esac
