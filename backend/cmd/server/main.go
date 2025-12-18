@@ -27,6 +27,8 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
+var Commit string
+
 // ---------- GPX minimal XML model (with Garmin HR extension) ----------
 
 type gpxFile struct {
@@ -83,6 +85,9 @@ func main() {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/healthz", func(w http.ResponseWriter, _ *http.Request) {
 		_, _ = w.Write([]byte("ok"))
+	})
+	mux.HandleFunc("/version", func(w http.ResponseWriter, _ *http.Request) {
+		w.Write([]byte(Commit))
 	})
 	mux.Handle("/api/upload", uploadHandler(pool))
 	mux.Handle("/api/activities", activitiesHandler(pool))

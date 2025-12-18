@@ -38,6 +38,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: ./backend
+          build-args: COMMIT=${{ github.sha }}
           push: true
           tags: |
             ${{ env.IMAGE_BACKEND }}:latest

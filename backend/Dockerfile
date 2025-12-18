@@ -12,8 +12,9 @@ RUN go mod download
 COPY . .
 
 # Build static binary
+ARG COMMIT
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
-    go build -trimpath -ldflags="-s -w" -o /bin/server ./cmd/server
+    go build -trimpath -ldflags="-s -w -X main.Commit=$COMMIT" -o /bin/server ./cmd/server
 
 # =========================================
 # Runtime stage
