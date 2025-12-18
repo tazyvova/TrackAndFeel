@@ -70,6 +70,9 @@ jobs:
             docker compose -f docker-compose.prod.yml pull
             docker compose -f docker-compose.prod.yml up -d --no-build
             docker compose -f docker-compose.prod.yml ps
+            echo "Caddyfile content:"
+            cat Caddyfile
+            docker compose -f docker-compose.prod.yml restart caddy
 
       # 5) Wait for services to be ready
       - name: Wait for deployment readiness
