@@ -8,7 +8,7 @@
       border-bottom: 1px solid #eee;
     "
   >
-    <h1 style="margin: 0; font-size: 18px">TrackAndFeel</h1>
+    <h1 style="margin: 0; font-size: 18px">TrackAndFeel Updated</h1>
     <nav style="display: flex; gap: 10px">
       <router-link to="/activities">Activities</router-link>
       <router-link to="/upload">Upload</router-link>
