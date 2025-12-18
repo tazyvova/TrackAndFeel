@@ -91,7 +91,9 @@ jobs:
       - name: Verify deployed version
         run: |
           DEPLOYED_VERSION=$(curl -s https://open.trackpace.twc1.net/version)
+          echo "Deployed version: '$DEPLOYED_VERSION'"
           EXPECTED_VERSION=${{ github.event.workflow_run.head_sha }}
+          echo "Expected version: '$EXPECTED_VERSION'"
           if [ "$DEPLOYED_VERSION" != "$EXPECTED_VERSION" ]; then
             echo "Version mismatch: deployed=$DEPLOYED_VERSION, expected=$EXPECTED_VERSION"
             exit 1
