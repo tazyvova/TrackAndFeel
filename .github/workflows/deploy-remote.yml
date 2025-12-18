@@ -70,3 +70,14 @@ jobs:
             docker compose -f docker-compose.prod.yml pull
             docker compose -f docker-compose.prod.yml up -d --no-build
             docker compose -f docker-compose.prod.yml ps
+
+      # 5) Verify deployment
+      - name: Verify deployed version
+        run: |
+          DEPLOYED_VERSION=$(curl -s https://open.trackpace.twc1.net/version)
+          EXPECTED_VERSION=${{ github.event.workflow_run.head_sha }}
+          if [ "$DEPLOYED_VERSION" != "$EXPECTED_VERSION" ]; then
+            echo "Version mismatch: deployed=$DEPLOYED_VERSION, expected=$EXPECTED_VERSION"
+            exit 1
+          fi
+          echo "Deployment verified: version $DEPLOYED_VERSION"
