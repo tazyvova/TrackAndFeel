@@ -94,11 +94,19 @@ jobs:
       - name: Verify deployed version
         run: |
           DEPLOYED_VERSION=$(curl -s https://open.trackpace.twc1.net/version)
-          echo "Deployed version: '$DEPLOYED_VERSION'"
+          echo "Deployed backend version: '$DEPLOYED_VERSION'"
           EXPECTED_VERSION=${{ github.event.workflow_run.head_sha }}
           echo "Expected version: '$EXPECTED_VERSION'"
           if [ "$DEPLOYED_VERSION" != "$EXPECTED_VERSION" ]; then
-            echo "Version mismatch: deployed=$DEPLOYED_VERSION, expected=$EXPECTED_VERSION"
+            echo "Backend version mismatch: deployed=$DEPLOYED_VERSION, expected=$EXPECTED_VERSION"
             exit 1
           fi
-          echo "Deployment verified: version $DEPLOYED_VERSION"
+
+          FRONTEND_VERSION=$(curl -s https://open.trackpace.twc1.net/frontend-version)
+          echo "Deployed frontend version: '$FRONTEND_VERSION'"
+          if [ "$FRONTEND_VERSION" != "$EXPECTED_VERSION" ]; then
+            echo "Frontend version mismatch: deployed=$FRONTEND_VERSION, expected=$EXPECTED_VERSION"
+            exit 1
+          fi
+
+          echo "Deployment verified: backend $DEPLOYED_VERSION, frontend $FRONTEND_VERSION"

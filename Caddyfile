@@ -17,6 +17,11 @@
       reverse_proxy backend:8080
     }
 
+    handle /frontend-version {
+      root * /usr/share/nginx/html
+      try_files /version.txt
+    }
+
     # SPA fallback
     handle {
       root * /usr/share/nginx/html
@@ -48,6 +53,11 @@ localhost {
 
     handle /version {
       reverse_proxy backend:8080
+    }
+
+    handle /frontend-version {
+      root * /usr/share/nginx/html
+      try_files /version.txt
     }
 
     # SPA fallback

@@ -4,6 +4,8 @@
 FROM node:20-alpine AS build
 WORKDIR /app
 
+ARG COMMIT
+
 # Install deps (respect lockfile)
 COPY package*.json ./
 RUN npm ci
@@ -11,6 +13,7 @@ RUN npm ci
 # Copy source and build
 COPY . .
 RUN npm run build
+RUN echo $COMMIT > dist/version.txt
 
 # =========================================
 # Runtime stage
