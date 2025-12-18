@@ -1,7 +1,5 @@
 #!/bin/sh
-# Copy dist to volume if empty
-if [ -z "$(ls -A /usr/share/nginx/html)" ]; then
-  cp -r /app/dist/* /usr/share/nginx/html/
-fi
+# Copy dist to volume, overwriting
+cp -r /app/dist/* /usr/share/nginx/html/
 # Start nginx
 exec nginx -g 'daemon off;'
