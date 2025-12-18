@@ -13,6 +13,10 @@
       reverse_proxy backend:8080
     }
 
+    handle /version {
+      reverse_proxy backend:8080
+    }
+
     # SPA fallback
     handle {
       root * /usr/share/nginx/html
@@ -29,4 +33,28 @@
   }
 
   encode zstd gzip
+}
+
+localhost {
+  route {
+    # keep the /api prefix when proxying
+    handle /api/* {
+      reverse_proxy backend:8080
+    }
+
+    handle /healthz {
+      reverse_proxy backend:8080
+    }
+
+    handle /version {
+      reverse_proxy backend:8080
+    }
+
+    # SPA fallback
+    handle {
+      root * /usr/share/nginx/html
+      try_files {path} /index.html
+      file_server
+    }
+  }
 }

@@ -71,7 +71,23 @@ jobs:
             docker compose -f docker-compose.prod.yml up -d --no-build
             docker compose -f docker-compose.prod.yml ps
 
-      # 5) Verify deployment
+      # 5) Wait for services to be ready
+      - name: Wait for deployment readiness
+        run: |
+          for i in {1..30}; do
+            if curl -s https://open.trackpace.twc1.net/healthz | grep -q "ok"; then
+              echo "Services are ready"
+              break
+            fi
+            echo "Waiting for services... ($i/30)"
+            sleep 10
+          done
+          if [ $i -eq 30 ]; then
+            echo "Services did not become ready in time"
+            exit 1
+          fi
+
+      # 6) Verify deployed version
       - name: Verify deployed version
         run: |
           DEPLOYED_VERSION=$(curl -s https://open.trackpace.twc1.net/version)
