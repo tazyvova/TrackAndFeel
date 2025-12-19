@@ -66,6 +66,7 @@ services:
       # Certificates (persist)
       - caddy_data:/data
       - caddy_config:/config
+    user: root
     restart: unless-stopped
 
 volumes:
