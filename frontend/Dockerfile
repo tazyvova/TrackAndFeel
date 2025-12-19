@@ -13,7 +13,6 @@ RUN npm ci
 # Copy source and build
 COPY . .
 RUN npm run build
-RUN echo $COMMIT > dist/version.txt
 
 # =========================================
 # Runtime stage
