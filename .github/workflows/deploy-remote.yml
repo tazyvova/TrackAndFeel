@@ -77,6 +77,8 @@ jobs:
             docker compose -f docker-compose.prod.yml restart caddy
             echo "Checking frontend version.txt:"
             docker compose -f docker-compose.prod.yml exec frontend ls -la /usr/share/nginx/html/version.txt || echo "version.txt not found"
+            echo "Frontend logs:"
+            docker compose -f docker-compose.prod.yml logs frontend | tail -10
 
       # 5) Wait for services to be ready
       - name: Wait for deployment readiness
