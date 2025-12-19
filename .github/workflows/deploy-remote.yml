@@ -66,6 +66,7 @@ jobs:
           script: |
             set -euo pipefail
             cd "${{ secrets.VDS_WORKDIR }}"
+            export COMMIT=${{ github.event.workflow_run.head_sha }}
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
             docker compose -f docker-compose.prod.yml pull
             docker compose -f docker-compose.prod.yml up -d --no-build --force-recreate
@@ -106,8 +107,8 @@ jobs:
 
           FRONTEND_VERSION=$(curl -s https://open.trackpace.twc1.net/frontend-version)
           echo "Deployed frontend version: '$FRONTEND_VERSION'"
-          if [ "$FRONTEND_VERSION" != "test" ]; then
-            echo "Frontend version mismatch: deployed=$FRONTEND_VERSION, expected=test"
+          if [ "$FRONTEND_VERSION" != "$EXPECTED_VERSION" ]; then
+            echo "Frontend version mismatch: deployed=$FRONTEND_VERSION, expected=$EXPECTED_VERSION"
             exit 1
           fi
 

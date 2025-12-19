@@ -18,7 +18,8 @@
     }
 
     handle /frontend-version {
-      respond "test"
+      root * /usr/share/nginx/html
+      try_files /version.txt
     }
 
     # SPA fallback
@@ -55,7 +56,8 @@ localhost {
     }
 
     handle /frontend-version {
-      respond "test"
+      root * /usr/share/nginx/html
+      try_files /version.txt
     }
 
     # SPA fallback

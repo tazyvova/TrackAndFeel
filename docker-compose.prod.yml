@@ -43,6 +43,8 @@ services:
       - frontend_dist:/usr/share/nginx/html
     depends_on:
       - backend
+    environment:
+      - COMMIT=$COMMIT
     restart: unless-stopped
 
   caddy:
