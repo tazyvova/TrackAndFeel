@@ -18,7 +18,9 @@
     }
 
     handle /frontend-version {
+      root * /usr/share/nginx/html
       rewrite * /version.txt
+      file_server
     }
 
     # SPA fallback
@@ -55,7 +57,9 @@ localhost {
     }
 
     handle /frontend-version {
+      root * /usr/share/nginx/html
       rewrite * /version.txt
+      file_server
     }
 
     # SPA fallback
@@ -66,3 +70,4 @@ localhost {
     }
   }
 }
+
