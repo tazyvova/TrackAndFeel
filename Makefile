@@ -17,7 +17,7 @@ down:
 dev: up logs
 
 test:
-	cd backend && go test ./...
+	docker compose -f docker-compose.yml -f docker-compose.test.yml run --rm backend-test
 	# add frontend tests later
 
 lint:

@@ -12,3 +12,11 @@ git config core.hooksPath .githooks
 ```
 
 With the hook enabled, `git push` will fail unless you are on a branch named `codex/<something>` or on `master`.
+
+## Tests
+
+Run backend tests in a disposable container so nothing lingers after the run:
+
+```
+docker compose -f docker-compose.yml -f docker-compose.test.yml run --rm backend-test
+```
