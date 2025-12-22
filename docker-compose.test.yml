@@ -1,0 +1,8 @@
+services:
+  backend-test:
+    image: golang:1.23
+    container_name: trackandfeel-backend-test
+    working_dir: /app
+    volumes:
+      - ./backend:/app
+    command: sh -c "go mod download && go test ./..."
