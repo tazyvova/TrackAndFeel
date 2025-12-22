@@ -1,14 +1,10 @@
 name: Build & Push Images
 
 on:
-  push:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
     branches: [master]
-    paths:
-      - "backend/**"
-      - "frontend/**"
-      - ".github/workflows/**"
-      - "Caddyfile"
-      - "docker-compose.prod.yml"
 
 permissions:
   contents: read
@@ -21,13 +17,16 @@ env:
 
 jobs:
   build-and-push:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
 
       # Make a short tag like sha-abc1234
       - name: Derive short SHA
-        run: echo "SHORT_SHA=sha-${GITHUB_SHA::7}" >> $GITHUB_ENV
+        run: echo "SHORT_SHA=sha-$(echo "${{ github.event.workflow_run.head_sha }}" | cut -c1-7)" >> $GITHUB_ENV
 
       - name: Login to GHCR
         uses: docker/login-action@v3

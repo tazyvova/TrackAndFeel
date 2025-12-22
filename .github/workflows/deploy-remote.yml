@@ -67,8 +67,23 @@ jobs:
             set -euo pipefail
             cd "${{ secrets.VDS_WORKDIR }}"
             export COMMIT=${{ github.event.workflow_run.head_sha }}
+            NEW_TAG="sha-${COMMIT:0:7}"
+
+            CURRENT_BACKEND=$(docker inspect --format '{{.Config.Image}}' trackandfeel-backend 2>/dev/null || true)
+            CURRENT_FRONTEND=$(docker inspect --format '{{.Config.Image}}' trackandfeel-frontend 2>/dev/null || true)
+            PREVIOUS_TAG=${CURRENT_BACKEND##*:}
+            if [ -z "$PREVIOUS_TAG" ] || [ "$PREVIOUS_TAG" = "$CURRENT_BACKEND" ]; then
+              PREVIOUS_TAG=${CURRENT_FRONTEND##*:}
+            fi
+            if [ -z "$PREVIOUS_TAG" ] || [ "$PREVIOUS_TAG" = "$CURRENT_FRONTEND" ]; then
+              PREVIOUS_TAG="latest"
+            fi
+
             echo "COMMIT=$COMMIT"
+            echo "Deploying tag: $NEW_TAG (previous tag: $PREVIOUS_TAG)"
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+
+            export IMAGE_TAG="$NEW_TAG"
             docker compose -f docker-compose.prod.yml pull
             docker compose -f docker-compose.prod.yml up -d --no-build --force-recreate
             docker compose -f docker-compose.prod.yml ps
@@ -79,6 +94,52 @@ jobs:
             docker compose -f docker-compose.prod.yml exec frontend ls -la /usr/share/nginx/html/version.txt || echo "version.txt not found"
             echo "Frontend logs:"
             docker compose -f docker-compose.prod.yml logs frontend | tail -10
+
+            validate_deployment() {
+              set +e
+              for i in {1..30}; do
+                if curl -ks https://open.trackpace.twc1.net/healthz | grep -q "ok"; then
+                  echo "Services are ready"
+                  break
+                fi
+                echo "Waiting for services... ($i/30)"
+                sleep 10
+              done
+              if [ $i -eq 30 ]; then
+                echo "Services did not become ready in time"
+                set -e
+                return 1
+              fi
+
+              DEPLOYED_VERSION=$(curl -ks https://open.trackpace.twc1.net/version)
+              echo "Deployed backend version: '$DEPLOYED_VERSION'"
+              EXPECTED_VERSION=$COMMIT
+              echo "Expected version: '$EXPECTED_VERSION'"
+              if [ "$DEPLOYED_VERSION" != "$EXPECTED_VERSION" ]; then
+                echo "Backend version mismatch: deployed=$DEPLOYED_VERSION, expected=$EXPECTED_VERSION"
+                set -e
+                return 1
+              fi
+
+              FRONTEND_VERSION=$(curl -ks https://open.trackpace.twc1.net/frontend-version)
+              echo "Deployed frontend version: '$FRONTEND_VERSION'"
+              if [ "$FRONTEND_VERSION" != "$EXPECTED_VERSION" ]; then
+                echo "Frontend version mismatch: deployed=$FRONTEND_VERSION, expected=$EXPECTED_VERSION"
+                set -e
+                return 1
+              fi
+              echo "Deployment verified: backend $DEPLOYED_VERSION, frontend $FRONTEND_VERSION"
+              set -e
+              return 0
+            }
+
+            if ! validate_deployment; then
+              echo "Validation failed, rolling back to previous tag: $PREVIOUS_TAG"
+              export IMAGE_TAG="$PREVIOUS_TAG"
+              docker compose -f docker-compose.prod.yml up -d --no-build --force-recreate
+              docker compose -f docker-compose.prod.yml ps
+              exit 1
+            fi
 
       # 5) Wait for services to be ready
       - name: Wait for deployment readiness
@@ -96,23 +157,3 @@ jobs:
             exit 1
           fi
 
-      # 6) Verify deployed version
-      - name: Verify deployed version
-        run: |
-          DEPLOYED_VERSION=$(curl -s https://open.trackpace.twc1.net/version)
-          echo "Deployed backend version: '$DEPLOYED_VERSION'"
-          EXPECTED_VERSION=${{ github.event.workflow_run.head_sha }}
-          echo "Expected version: '$EXPECTED_VERSION'"
-          if [ "$DEPLOYED_VERSION" != "$EXPECTED_VERSION" ]; then
-            echo "Backend version mismatch: deployed=$DEPLOYED_VERSION, expected=$EXPECTED_VERSION"
-            exit 1
-          fi
-
-          FRONTEND_VERSION=$(curl -s https://open.trackpace.twc1.net/frontend-version)
-          echo "Deployed frontend version: '$FRONTEND_VERSION'"
-          if [ "$FRONTEND_VERSION" != "$EXPECTED_VERSION" ]; then
-            echo "Frontend version mismatch: deployed=$FRONTEND_VERSION, expected=$EXPECTED_VERSION"
-            exit 1
-          fi
-
-          echo "Deployment verified: backend $DEPLOYED_VERSION, frontend $FRONTEND_VERSION"
