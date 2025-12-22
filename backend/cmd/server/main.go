@@ -10,7 +10,6 @@ import (
 	"time"
 
 	appdb "TrackAndFeel/backend/internal/db"
-	"TrackAndFeel/backend/internal/handlers"
 	"TrackAndFeel/backend/internal/migrate"
 )
 
@@ -30,19 +29,8 @@ func main() {
 		log.Fatalf("migrations: %v", err)
 	}
 
-	mux := http.NewServeMux()
-	mux.HandleFunc("/healthz", func(w http.ResponseWriter, _ *http.Request) {
-		_, _ = w.Write([]byte("ok"))
-	})
-	mux.HandleFunc("/version", func(w http.ResponseWriter, _ *http.Request) {
-		w.Write([]byte(Commit))
-	})
-	mux.Handle("/api/upload", handlers.Upload(pool))
-	mux.Handle("/api/activities", handlers.ListActivities(pool))
-	mux.Handle("/api/activities/", handlers.GetActivityTrack(pool)) // expects /api/activities/{id}/track
-
 	port := getenv("PORT", "8080")
-	srv := &http.Server{Addr: ":" + port, Handler: mux}
+	srv := &http.Server{Addr: ":" + port, Handler: buildRouter(pool)}
 
 	// start
 	go func() {
