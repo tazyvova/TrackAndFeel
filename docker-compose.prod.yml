@@ -16,7 +16,7 @@ services:
     restart: unless-stopped
 
   backend:
-    image: ghcr.io/tazyvova/trackandfeel-backend:latest # <— change this
+    image: ghcr.io/tazyvova/trackandfeel-backend:${IMAGE_TAG:-latest}
     build:
       context: ./backend
       dockerfile: Dockerfile
@@ -36,7 +36,7 @@ services:
     restart: unless-stopped
 
   frontend:
-    image: ghcr.io/tazyvova/trackandfeel-frontend:latest # <— change this
+    image: ghcr.io/tazyvova/trackandfeel-frontend:${IMAGE_TAG:-latest}
     build: { context: ./frontend, dockerfile: Dockerfile }
     # no public ports needed; Caddy will serve the files
     volumes:
