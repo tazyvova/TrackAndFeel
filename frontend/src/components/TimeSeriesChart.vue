@@ -9,6 +9,7 @@ const props = defineProps({
   series: { type: Array, required: true }, // numbers or nulls
   title: { type: String, default: '' },
   yLabel: { type: String, default: '' },
+  segments: { type: Array, default: () => [] }, // [{ start, end, color, label }]
 })
 
 const canvas = ref(null)
@@ -47,6 +48,31 @@ function fmtHMS(sec) {
   return h > 0
     ? `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
     : `${m}:${String(s).padStart(2, '0')}`
+}
+
+const bandsPlugin = {
+  id: 'segmentBands',
+  beforeDraw(chart, _, opts) {
+    const bands = opts?.bands
+    if (!bands?.length) return
+    const {
+      ctx,
+      chartArea: { top, bottom },
+      scales: { x },
+    } = chart
+    ctx.save()
+    for (const band of bands) {
+      const start = Number(band.start)
+      const end = Number(band.end)
+      if (!Number.isFinite(start) || !Number.isFinite(end) || end <= start) continue
+      const x1 = x.getPixelForValue(start)
+      const x2 = x.getPixelForValue(end)
+      ctx.fillStyle = band.color || '#999'
+      ctx.globalAlpha = 0.08
+      ctx.fillRect(x1, top, x2 - x1, bottom - top)
+    }
+    ctx.restore()
+  },
 }
 
 function build() {
@@ -115,9 +141,11 @@ function build() {
               title: (items) => fmtHMS(items?.[0]?.raw?.x ?? 0),
             },
           },
+          segmentBands: { bands: props.segments },
         },
         elements: { line: { tension: 0 } },
       },
+      plugins: [bandsPlugin],
     })
   } catch (e) {
     console.error('TimeSeriesChart: failed to create chart', e)
@@ -129,7 +157,7 @@ onMounted(async () => {
   build()
 })
 watch(
-  () => [props.labels, props.series],
+  () => [props.labels, props.series, props.segments],
   () => {
     nextTick().then(build)
   },
