@@ -9,7 +9,7 @@ const props = defineProps({
   legend: { type: Array, default: () => [] }, // [{ color, label }]
 })
 
-let map, layer
+let map, baseLayer
 let segmentLayers = []
 const mapEl = ref(null)
 
@@ -31,11 +31,17 @@ watch(
 
 function draw() {
   if (!map || !props.coords?.length) return
-  if (layer) layer.remove()
+  if (baseLayer) {
+    baseLayer.remove()
+    baseLayer = null
+  }
   if (segmentLayers.length) {
     segmentLayers.forEach((l) => l.remove())
     segmentLayers = []
   }
+
+  const baseLatlngs = props.coords.map(([lon, lat]) => [lat, lon])
+  baseLayer = L.polyline(baseLatlngs, { weight: 4, color: '#888', opacity: 0.35 }).addTo(map)
 
   if (props.segments?.length) {
     const bounds = []
@@ -46,11 +52,9 @@ function draw() {
       bounds.push(...latlngs)
     }
     if (bounds.length) map.fitBounds(bounds, { padding: [20, 20] })
+    else map.fitBounds(baseLayer.getBounds(), { padding: [20, 20] })
   } else {
-    // convert [lon,lat] -> [lat,lon] for Leaflet
-    const latlngs = props.coords.map(([lon, lat]) => [lat, lon])
-    layer = L.polyline(latlngs, { weight: 4 }).addTo(map)
-    map.fitBounds(layer.getBounds(), { padding: [20, 20] })
+    map.fitBounds(baseLayer.getBounds(), { padding: [20, 20] })
   }
 }
 
