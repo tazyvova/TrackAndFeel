@@ -66,10 +66,10 @@ function haversineMeters(lat1, lon1, lat2, lon2) {
 
 const trackPoints = computed(() => {
   if (!detail.value) return []
-  const coords = detail.value.geojson.geometry.coordinates
-  const times = detail.value.series.time_iso
-  const hr = detail.value.series.hr
-  const speed = detail.value.series.speed_mps
+  const coords = detail.value.geojson?.geometry?.coordinates || []
+  const times = detail.value.series?.time_iso || []
+  const hr = detail.value.series?.hr || []
+  const speed = detail.value.series?.speed_mps || []
 
   let total = 0
   const pts = []
@@ -102,6 +102,7 @@ function buildBucketSegments(points, valueFn, labels) {
 
   let currentBucket = null
   let currentCoords = []
+  let currentStartIdx = null
   for (let i = 0; i < points.length; i++) {
     const v = valueFn(points[i])
     let bucket = -1
@@ -116,10 +117,11 @@ function buildBucketSegments(points, valueFn, labels) {
     if (bucket !== currentBucket) {
       if (currentCoords.length > 1 && currentBucket != null && currentBucket >= 0) {
         const color = palette[currentBucket]
-        segments.push({ coords: currentCoords, color, label: labels[currentBucket] })
+        segments.push({ coords: currentCoords, color, label: labels[currentBucket], startIdx: currentStartIdx, endIdx: i - 1 })
         if (!legend.some((l) => l.label === labels[currentBucket])) legend.push({ color, label: labels[currentBucket] })
       }
       currentCoords = bucket >= 0 ? [coord] : []
+      currentStartIdx = bucket >= 0 ? i : null
       currentBucket = bucket
     } else if (bucket >= 0) {
       currentCoords.push(coord)
@@ -127,7 +129,7 @@ function buildBucketSegments(points, valueFn, labels) {
   }
   if (currentCoords.length > 1 && currentBucket != null && currentBucket >= 0) {
     const color = palette[currentBucket]
-    segments.push({ coords: currentCoords, color, label: labels[currentBucket] })
+    segments.push({ coords: currentCoords, color, label: labels[currentBucket], startIdx: currentStartIdx, endIdx: points.length - 1 })
     if (!legend.some((l) => l.label === labels[currentBucket])) legend.push({ color, label: labels[currentBucket] })
   }
   return { segments, legend }
@@ -144,10 +146,33 @@ function buildBoundarySegments(points, boundaries, labelForIdx) {
     if (coords.length < 2) continue
     const color = palette[i % palette.length]
     const label = labelForIdx(i)
-    segments.push({ coords, color, label })
+    segments.push({ coords, color, label, startIdx: start, endIdx: end })
     legend.push({ color, label })
   }
   return { segments, legend }
+}
+
+function chartBands(points, segments) {
+  if (!points.length || !segments.length) return []
+  const times = points.map((p) => Date.parse(p.t)).map((t) => (Number.isFinite(t) ? t / 1000 : NaN))
+  const t0 = times.find((v) => Number.isFinite(v))
+  const fallbackIdx = (idx) => idx
+  const baseline = Number.isFinite(t0) ? t0 : null
+
+  const xValue = (idx) => {
+    if (!Number.isInteger(idx) || idx < 0 || idx >= times.length) return NaN
+    if (baseline != null && Number.isFinite(times[idx])) return times[idx] - baseline
+    return fallbackIdx(idx)
+  }
+
+  return segments
+    .map((seg) => {
+      const start = xValue(seg.startIdx)
+      const end = xValue(seg.endIdx)
+      if (!Number.isFinite(start) || !Number.isFinite(end) || end <= start) return null
+      return { start, end, color: seg.color, label: seg.label }
+    })
+    .filter(Boolean)
 }
 
 const coloredTrack = computed(() => {
@@ -195,6 +220,8 @@ const coloredTrack = computed(() => {
 
   return { segments: [], legend: [] }
 })
+
+const chartSegments = computed(() => chartBands(trackPoints.value, coloredTrack.value.segments))
 </script>
 
 <template>
@@ -234,6 +261,7 @@ const coloredTrack = computed(() => {
       <TimeSeriesChart
         :labels="detail.series.time_iso"
         :series="speedSeries"
+        :segments="chartSegments"
         :title="
           store.unit === 'pace'
             ? 'Pace (min/km)'
@@ -246,12 +274,14 @@ const coloredTrack = computed(() => {
       <TimeSeriesChart
         :labels="detail.series.time_iso"
         :series="detail.series.hr"
+        :segments="chartSegments"
         title="Heart Rate"
         y-label="bpm"
       />
       <TimeSeriesChart
         :labels="detail.series.time_iso"
         :series="detail.series.elevation"
+        :segments="chartSegments"
         title="Elevation"
         y-label="m"
       />
