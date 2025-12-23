@@ -66,10 +66,10 @@ function haversineMeters(lat1, lon1, lat2, lon2) {
 
 const trackPoints = computed(() => {
   if (!detail.value) return []
-  const coords = detail.value.geojson.geometry.coordinates
-  const times = detail.value.series.time_iso
-  const hr = detail.value.series.hr
-  const speed = detail.value.series.speed_mps
+  const coords = detail.value.geojson?.geometry?.coordinates || []
+  const times = detail.value.series?.time_iso || []
+  const hr = detail.value.series?.hr || []
+  const speed = detail.value.series?.speed_mps || []
 
   let total = 0
   const pts = []

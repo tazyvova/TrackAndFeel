@@ -43,6 +43,15 @@ function draw() {
   const baseLatlngs = props.coords.map(([lon, lat]) => [lat, lon])
   baseLayer = L.polyline(baseLatlngs, { weight: 4, color: '#888', opacity: 0.35 }).addTo(map)
 
+  const baseBounds = baseLayer.getBounds()
+  const fallbackView = () => {
+    if (baseLatlngs.length === 1) {
+      map.setView(baseLatlngs[0], 15)
+    } else if (baseBounds.isValid()) {
+      map.fitBounds(baseBounds, { padding: [20, 20] })
+    }
+  }
+
   if (props.segments?.length) {
     const bounds = []
     for (const seg of props.segments) {
@@ -51,11 +60,16 @@ function draw() {
       segmentLayers.push(l)
       bounds.push(...latlngs)
     }
-    if (bounds.length) map.fitBounds(bounds, { padding: [20, 20] })
-    else map.fitBounds(baseLayer.getBounds(), { padding: [20, 20] })
+    if (bounds.length) {
+      map.fitBounds(bounds, { padding: [20, 20] })
+    } else {
+      fallbackView()
+    }
   } else {
-    map.fitBounds(baseLayer.getBounds(), { padding: [20, 20] })
+    fallbackView()
   }
+
+  map.invalidateSize()
 }
 
 onBeforeUnmount(() => map && map.remove())
