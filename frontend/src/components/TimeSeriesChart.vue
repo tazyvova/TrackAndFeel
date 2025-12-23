@@ -9,6 +9,7 @@ const props = defineProps({
   series: { type: Array, required: true }, // numbers or nulls
   title: { type: String, default: '' },
   yLabel: { type: String, default: '' },
+  segments: { type: Array, default: () => [] }, // [{ start, end, color, label }]
 })
 
 const canvas = ref(null)
@@ -49,6 +50,31 @@ function fmtHMS(sec) {
     : `${m}:${String(s).padStart(2, '0')}`
 }
 
+const bandsPlugin = {
+  id: 'segmentBands',
+  beforeDraw(chart, _, opts) {
+    const bands = opts?.bands
+    if (!bands?.length) return
+    const {
+      ctx,
+      chartArea: { top, bottom },
+      scales: { x },
+    } = chart
+    ctx.save()
+    for (const band of bands) {
+      const start = Number(band.start)
+      const end = Number(band.end)
+      if (!Number.isFinite(start) || !Number.isFinite(end) || end <= start) continue
+      const x1 = x.getPixelForValue(start)
+      const x2 = x.getPixelForValue(end)
+      ctx.fillStyle = band.color || '#999'
+      ctx.globalAlpha = 0.08
+      ctx.fillRect(x1, top, x2 - x1, bottom - top)
+    }
+    ctx.restore()
+  },
+}
+
 function build() {
   if (chart) {
     chart.destroy()
@@ -61,6 +87,9 @@ function build() {
   if (!ctx) return
 
   const { points, hasData } = model.value
+  const segments = (props.segments || [])
+    .map((s) => ({ start: Number(s.start), end: Number(s.end), color: s.color || '#999', label: s.label }))
+    .filter((s) => Number.isFinite(s.start) && Number.isFinite(s.end) && s.end > s.start)
 
   // If no finite Y values, show “No data” overlay and don’t instantiate Chart.js
   if (!hasData) {
@@ -83,6 +112,14 @@ function build() {
             borderWidth: 1,
             pointRadius: 0,
             spanGaps: true,
+            borderColor: '#1976d2',
+            segment: {
+              borderColor: (ctx) => {
+                const mid = (ctx.p0?.parsed?.x + ctx.p1?.parsed?.x) / 2
+                const match = segments.find((s) => mid >= s.start && mid <= s.end)
+                return match?.color || '#1976d2'
+              },
+            },
           },
         ],
       },
@@ -115,9 +152,11 @@ function build() {
               title: (items) => fmtHMS(items?.[0]?.raw?.x ?? 0),
             },
           },
+          segmentBands: { bands: segments },
         },
         elements: { line: { tension: 0 } },
       },
+      plugins: [bandsPlugin],
     })
   } catch (e) {
     console.error('TimeSeriesChart: failed to create chart', e)
@@ -129,7 +168,7 @@ onMounted(async () => {
   build()
 })
 watch(
-  () => [props.labels, props.series],
+  () => [props.labels, props.series, props.segments],
   () => {
     nextTick().then(build)
   },
