@@ -77,7 +77,13 @@ function buildBucketSegments(points, valueFn, labels) {
   }
   if (currentCoords.length > 1 && currentBucket != null && currentBucket >= 0) {
     const color = palette[currentBucket]
-    segments.push({ coords: currentCoords, color, label: labels[currentBucket], startIdx: currentStartIdx, endIdx: points.length - 1 })
+    segments.push({
+      coords: currentCoords,
+      color,
+      label: labels[currentBucket],
+      startIdx: currentStartIdx,
+      endIdx: points.length - 1,
+    })
     if (!legend.some((l) => l.label === labels[currentBucket])) legend.push({ color, label: labels[currentBucket] })
   }
   return { segments, legend }
