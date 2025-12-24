@@ -87,6 +87,9 @@ function build() {
   if (!ctx) return
 
   const { points, hasData } = model.value
+  const segments = (props.segments || [])
+    .map((s) => ({ start: Number(s.start), end: Number(s.end), color: s.color || '#999', label: s.label }))
+    .filter((s) => Number.isFinite(s.start) && Number.isFinite(s.end) && s.end > s.start)
 
   // If no finite Y values, show “No data” overlay and don’t instantiate Chart.js
   if (!hasData) {
@@ -109,6 +112,14 @@ function build() {
             borderWidth: 1,
             pointRadius: 0,
             spanGaps: true,
+            borderColor: '#1976d2',
+            segment: {
+              borderColor: (ctx) => {
+                const mid = (ctx.p0?.parsed?.x + ctx.p1?.parsed?.x) / 2
+                const match = segments.find((s) => mid >= s.start && mid <= s.end)
+                return match?.color || '#1976d2'
+              },
+            },
           },
         ],
       },
