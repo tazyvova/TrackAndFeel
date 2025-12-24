@@ -152,7 +152,7 @@ function build() {
               title: (items) => fmtHMS(items?.[0]?.raw?.x ?? 0),
             },
           },
-          segmentBands: { bands: segments },
+          segmentBands: { bands: props.segments },
         },
         elements: { line: { tension: 0 } },
       },
