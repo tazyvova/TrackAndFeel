@@ -1,4 +1,4 @@
-module TrackAndFeel/backend
+module trackandfeel
 
 go 1.23.0
 

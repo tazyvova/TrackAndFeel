@@ -9,8 +9,8 @@ import (
 	"syscall"
 	"time"
 
-	appdb "TrackAndFeel/backend/internal/db"
-	"TrackAndFeel/backend/internal/migrate"
+appdb "trackandfeel/backend/internal/db"
+"trackandfeel/backend/internal/migrate"
 )
 
 var Commit string

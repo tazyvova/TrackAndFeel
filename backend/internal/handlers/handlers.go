@@ -3,13 +3,14 @@ package handlers
 import (
 	"encoding/json"
 	"errors"
+	"math"
 	"net/http"
 	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
 
-	"TrackAndFeel/backend/internal/gpx"
+"trackandfeel/backend/internal/gpx"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
@@ -206,6 +207,11 @@ func GetActivityTrack(pool *pgxpool.Pool) http.Handler {
 		ele := make([]*float64, 0, len(points))
 		hr := make([]*int, 0, len(points))
 		spd := make([]*float64, 0, len(points))
+		spdKMH := make([]*float64, 0, len(points))
+		pace := make([]*float64, 0, len(points))
+		elapsedSec := make([]float64, 0, len(points))
+
+		baseline := points[0].T
 
 		for _, p := range points {
 			coords = append(coords, [2]float64{p.Lon, p.Lat})
@@ -213,6 +219,9 @@ func GetActivityTrack(pool *pgxpool.Pool) http.Handler {
 			ele = append(ele, p.Ele)
 			hr = append(hr, p.HR)
 			spd = append(spd, p.Spd)
+			spdKMH = append(spdKMH, toKMH(p.Spd))
+			pace = append(pace, paceMinPerKm(p.Spd))
+			elapsedSec = append(elapsedSec, p.T.Sub(baseline).Seconds())
 		}
 
 		resp := map[string]any{
@@ -234,14 +243,36 @@ func GetActivityTrack(pool *pgxpool.Pool) http.Handler {
 				"properties": map[string]any{},
 			},
 			"series": map[string]any{
-				"time_iso":  timeISO,
-				"elevation": ele,
-				"hr":        hr,
-				"speed_mps": spd,
+				"time_iso":        timeISO,
+				"elapsed_sec":     elapsedSec,
+				"elevation":       ele,
+				"hr":              hr,
+				"speed_mps":       spd,
+				"speed_kmh":       spdKMH,
+				"pace_min_per_km": pace,
 			},
 		}
 
 		w.Header().Set("Content-Type", "application/json")
 		_ = json.NewEncoder(w).Encode(resp)
 	})
+}
+
+func paceMinPerKm(speed *float64) *float64 {
+	if speed == nil || *speed <= 0 {
+		return nil
+	}
+	secPerKm := 1000.0 / *speed
+	minutes := math.Floor(secPerKm / 60)
+	seconds := math.Round(math.Mod(secPerKm, 60))
+	v := minutes + seconds/100
+	return &v
+}
+
+func toKMH(speed *float64) *float64 {
+	if speed == nil {
+		return nil
+	}
+	v := *speed * 3.6
+	return &v
 }

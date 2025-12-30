@@ -7,6 +7,7 @@ Chart.defaults.maintainAspectRatio = false
 const props = defineProps({
   labels: { type: Array, required: true }, // ISO strings
   series: { type: Array, required: true }, // numbers or nulls
+  elapsed: { type: Array, default: () => [] }, // seconds from start, optional
   title: { type: String, default: '' },
   yLabel: { type: String, default: '' },
   segments: { type: Array, default: () => [] }, // [{ start, end, color, label }]
@@ -22,6 +23,11 @@ const model = computed(() => {
 
   const times = new Array(n)
   for (let i = 0; i < n; i++) {
+    const fromElapsed = props.elapsed?.[i]
+    if (Number.isFinite(fromElapsed)) {
+      times[i] = Number(fromElapsed)
+      continue
+    }
     const t = Date.parse(props.labels[i])
     times[i] = Number.isFinite(t) ? t / 1000 : NaN
   }

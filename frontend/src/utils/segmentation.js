@@ -16,6 +16,7 @@ function buildTrackPoints(detail) {
   if (!detail) return []
   const coords = detail.geojson?.geometry?.coordinates || []
   const times = detail.series?.time_iso || []
+  const elapsed = detail.series?.elapsed_sec || []
   const hr = detail.series?.hr || []
   const speed = detail.series?.speed_mps || []
 
@@ -27,7 +28,7 @@ function buildTrackPoints(detail) {
       const [prevLon, prevLat] = coords[i - 1]
       total += haversineMeters(prevLat, prevLon, lat, lon)
     }
-    pts.push({ lon, lat, t: times?.[i], hr: hr?.[i], speed: speed?.[i], dist: total })
+    pts.push({ lon, lat, t: times?.[i], elapsed: elapsed?.[i], hr: hr?.[i], speed: speed?.[i], dist: total })
   }
   return pts
 }
@@ -153,7 +154,9 @@ function buildSegments(points, mode) {
 
 function toChartBands(points, segments) {
   if (!points.length || !segments.length) return []
-  const times = points.map((p) => Date.parse(p.t)).map((t) => (Number.isFinite(t) ? t / 1000 : NaN))
+  const elapsed = points.map((p) => Number.isFinite(p.elapsed) ? Number(p.elapsed) : NaN)
+  const fromISO = points.map((p) => Date.parse(p.t)).map((t) => (Number.isFinite(t) ? t / 1000 : NaN))
+  const times = elapsed.map((t, i) => (Number.isFinite(t) ? t : fromISO[i]))
   const t0 = times.find((v) => Number.isFinite(v))
   const fallbackIdx = (idx) => idx
   const baseline = Number.isFinite(t0) ? t0 : null

@@ -3,7 +3,7 @@ package main
 import (
 	"net/http"
 
-	"TrackAndFeel/backend/internal/handlers"
+"trackandfeel/backend/internal/handlers"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 

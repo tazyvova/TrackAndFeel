@@ -23,28 +23,16 @@ onMounted(async () => {
   }
 })
 
-// conversions for speed series
-function toKmh(arr) {
-  return arr.map((v) => (v == null ? null : v * 3.6))
-}
-function toPaceMinPerKm(arr) {
-  // m/s -> s/m -> s/km -> min/km
-  return arr.map((v) => {
-    if (v == null || v <= 0) return null
-    const secPerKm = 1000 / v
-    const m = Math.floor(secPerKm / 60)
-    const s = Math.round(secPerKm % 60)
-    return Number(`${m}.${String(s).padStart(2, '0')}`) // e.g., 5.12 meaning 5'12"
-  })
-}
 const speedSeries = computed(() => {
   if (!detail.value) return []
   const src = detail.value.series.speed_mps
+  const kmh = detail.value.series.speed_kmh
+  const pace = detail.value.series.pace_min_per_km
   switch (store.unit) {
     case 'kmh':
-      return toKmh(src)
+      return kmh ?? []
     case 'pace':
-      return toPaceMinPerKm(src) // “min.km” formatting explained below
+      return pace ?? []
     default:
       return src
   }
@@ -93,6 +81,7 @@ const chartSegments = computed(() => toChartBands(trackPoints.value, coloredTrac
     <section style="margin-top: 16px; display: grid; gap: 16px">
       <TimeSeriesChart
         :labels="detail.series.time_iso"
+        :elapsed="detail.series.elapsed_sec"
         :series="speedSeries"
         :segments="chartSegments"
         :title="
@@ -106,6 +95,7 @@ const chartSegments = computed(() => toChartBands(trackPoints.value, coloredTrac
       />
       <TimeSeriesChart
         :labels="detail.series.time_iso"
+        :elapsed="detail.series.elapsed_sec"
         :series="detail.series.hr"
         :segments="chartSegments"
         title="Heart Rate"
@@ -113,6 +103,7 @@ const chartSegments = computed(() => toChartBands(trackPoints.value, coloredTrac
       />
       <TimeSeriesChart
         :labels="detail.series.time_iso"
+        :elapsed="detail.series.elapsed_sec"
         :series="detail.series.elevation"
         :segments="chartSegments"
         title="Elevation"
