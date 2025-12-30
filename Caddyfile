@@ -2,20 +2,23 @@
   email {$ACME_EMAIL}
 }
 
+(api-routes) {
+  handle /api/* {
+    reverse_proxy {args.0}
+  }
+
+  handle /healthz {
+    reverse_proxy {args.0}
+  }
+
+  handle /version {
+    reverse_proxy {args.0}
+  }
+}
+
 {$DOMAIN} {
   route {
-    # keep the /api prefix when proxying
-    handle /api/* {
-      reverse_proxy backend:8080
-    }
-
-    handle /healthz {
-      reverse_proxy backend:8080
-    }
-
-    handle /version {
-      reverse_proxy backend:8080
-    }
+    import api-routes backend:8080
 
     handle /frontend-version {
       root * /usr/share/nginx/html
@@ -23,7 +26,6 @@
       file_server
     }
 
-    # SPA fallback
     handle {
       root * /usr/share/nginx/html
       try_files {path} /index.html
@@ -41,20 +43,34 @@
   encode zstd gzip
 }
 
+*.{$PREVIEW_DOMAIN} {
+  @preview host_regexp prHost ^pr-(?P<prnum>[0-9]+)\.{$PREVIEW_DOMAIN}$
+
+  route @preview {
+    import api-routes pr-{http.regexp.prnum}-backend:8080
+
+    handle /frontend-version {
+      reverse_proxy pr-{http.regexp.prnum}-frontend:80
+    }
+
+    handle {
+      reverse_proxy pr-{http.regexp.prnum}-frontend:80
+    }
+  }
+
+  header {
+    Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+    X-Content-Type-Options "nosniff"
+    X-Frame-Options "DENY"
+    Referrer-Policy "strict-origin-when-cross-origin"
+  }
+
+  encode zstd gzip
+}
+
 localhost {
   route {
-    # keep the /api prefix when proxying
-    handle /api/* {
-      reverse_proxy backend:8080
-    }
-
-    handle /healthz {
-      reverse_proxy backend:8080
-    }
-
-    handle /version {
-      reverse_proxy backend:8080
-    }
+    import api-routes backend:8080
 
     handle /frontend-version {
       root * /usr/share/nginx/html
@@ -62,7 +78,6 @@ localhost {
       file_server
     }
 
-    # SPA fallback
     handle {
       root * /usr/share/nginx/html
       try_files {path} /index.html
