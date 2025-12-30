@@ -1,0 +1,59 @@
+services:
+  db:
+    image: postgis/postgis:16-3.4
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}" ]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+
+  backend:
+    image: ${IMAGE_BACKEND:-ghcr.io/tazyvova/trackandfeel-backend}:${IMAGE_TAG:-latest}
+    environment:
+      PORT: "8080"
+      DB_HOST: db
+      DB_PORT: "5432"
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_NAME: ${DB_NAME}
+    depends_on:
+      db:
+        condition: service_healthy
+    expose:
+      - "8080"
+    networks:
+      default: {}
+      preview_ingress:
+        aliases:
+          - pr-${PR_NUMBER}-backend
+    restart: unless-stopped
+
+  frontend:
+    image: ${IMAGE_FRONTEND:-ghcr.io/tazyvova/trackandfeel-frontend}:${IMAGE_TAG:-latest}
+    environment:
+      - COMMIT=$COMMIT
+    depends_on:
+      - backend
+    expose:
+      - "80"
+    networks:
+      default: {}
+      preview_ingress:
+        aliases:
+          - pr-${PR_NUMBER}-frontend
+    restart: unless-stopped
+
+volumes:
+  db_data:
+
+networks:
+  preview_ingress:
+    external: true
+    name: ${PREVIEW_INGRESS_NETWORK:-trackandfeel-preview}
