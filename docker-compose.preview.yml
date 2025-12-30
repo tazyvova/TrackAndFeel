@@ -38,7 +38,7 @@ services:
   frontend:
     image: ${IMAGE_FRONTEND:-ghcr.io/tazyvova/trackandfeel-frontend}:${IMAGE_TAG:-latest}
     environment:
-      - COMMIT=$COMMIT
+      - COMMIT=${COMMIT}
     depends_on:
       - backend
     expose:
