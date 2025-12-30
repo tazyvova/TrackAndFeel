@@ -105,15 +105,15 @@ jobs:
             echo "Creating ingress network ${NETWORK_NAME} if missing"
             docker network create "${NETWORK_NAME}" || true
 
-            cat > .env.pr-${PR_NUMBER} <<EOF_ENV
-DB_NAME=${{ secrets.DB_NAME }}
-DB_USER=${{ secrets.DB_USER }}
-DB_PASSWORD=${{ secrets.DB_PASSWORD }}
-IMAGE_TAG=${IMAGE_TAG}
-PR_NUMBER=${PR_NUMBER}
-COMMIT=${{ github.event.pull_request.head.sha }}
-PREVIEW_INGRESS_NETWORK=${NETWORK_NAME}
-EOF_ENV
+            cat <<EOF_ENV > ".env.pr-${PR_NUMBER}"
+            DB_NAME=${{ secrets.DB_NAME }}
+            DB_USER=${{ secrets.DB_USER }}
+            DB_PASSWORD=${{ secrets.DB_PASSWORD }}
+            IMAGE_TAG=${IMAGE_TAG}
+            PR_NUMBER=${PR_NUMBER}
+            COMMIT=${{ github.event.pull_request.head.sha }}
+            PREVIEW_INGRESS_NETWORK=${NETWORK_NAME}
+            EOF_ENV
 
             echo "Logging into GHCR"
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
