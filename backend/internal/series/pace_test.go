@@ -11,8 +11,8 @@ func TestSpeedToPaceMinPerKm(t *testing.T) {
 		{name: "nil input", speed: nil, expect: nil},
 		{name: "zero speed", speed: ptr(0), expect: nil},
 		{name: "negative speed", speed: ptr(-1), expect: nil},
-		{name: "4 mps", speed: ptr(4), expect: ptr(4.10)},
-		{name: "3.33 mps", speed: ptr(3.33), expect: ptr(5.00)},
+		{name: "4 mps", speed: ptr(4), expect: ptr(4.17)},
+		{name: "3.33 mps", speed: ptr(3.33), expect: ptr(5.01)},
 	}
 
 	for _, tt := range tests {
