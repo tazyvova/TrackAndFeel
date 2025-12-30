@@ -27,24 +27,15 @@ onMounted(async () => {
 function toKmh(arr) {
   return arr.map((v) => (v == null ? null : v * 3.6))
 }
-function toPaceMinPerKm(arr) {
-  // m/s -> s/m -> s/km -> min/km
-  return arr.map((v) => {
-    if (v == null || v <= 0) return null
-    const secPerKm = 1000 / v
-    const m = Math.floor(secPerKm / 60)
-    const s = Math.round(secPerKm % 60)
-    return Number(`${m}.${String(s).padStart(2, '0')}`) // e.g., 5.12 meaning 5'12"
-  })
-}
 const speedSeries = computed(() => {
   if (!detail.value) return []
   const src = detail.value.series.speed_mps
+  const pace = detail.value.series.pace_min_per_km
   switch (store.unit) {
     case 'kmh':
       return toKmh(src)
     case 'pace':
-      return toPaceMinPerKm(src) // “min.km” formatting explained below
+      return pace
     default:
       return src
   }
