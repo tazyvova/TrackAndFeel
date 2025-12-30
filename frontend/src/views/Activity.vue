@@ -27,10 +27,11 @@ onMounted(async () => {
 function toKmh(arr) {
   return arr.map((v) => (v == null ? null : v * 3.6))
 }
+const paceSeries = computed(() => detail.value?.series?.pace_min_per_km || [])
 const speedSeries = computed(() => {
   if (!detail.value) return []
   const src = detail.value.series.speed_mps
-  const pace = detail.value.series.pace_min_per_km
+  const pace = paceSeries.value
   switch (store.unit) {
     case 'kmh':
       return toKmh(src)
@@ -46,6 +47,44 @@ const trackPoints = computed(() => buildTrackPoints(detail.value))
 const coloredTrack = computed(() => buildSegments(trackPoints.value, coloring.value))
 
 const chartSegments = computed(() => toChartBands(trackPoints.value, coloredTrack.value.segments))
+
+function avgInRange(arr, start, end) {
+  const vals = []
+  for (let i = start; i <= end && i < arr.length; i++) {
+    const v = arr[i]
+    if (Number.isFinite(v)) vals.push(v)
+  }
+  if (!vals.length) return null
+  return vals.reduce((a, b) => a + b, 0) / vals.length
+}
+
+function formatPace(minPerKm) {
+  if (!Number.isFinite(minPerKm)) return null
+  const totalSeconds = Math.round(minPerKm * 60)
+  const minutes = Math.floor(totalSeconds / 60)
+  const seconds = String(totalSeconds % 60).padStart(2, '0')
+  return `${minutes}:${seconds}`
+}
+
+const segmentComparisons = computed(() => {
+  if (!detail.value) return []
+  const pace = paceSeries.value
+  const hr = detail.value.series?.hr || []
+  return (coloredTrack.value.segments || [])
+    .map((seg, idx) => {
+      const start = seg.startIdx ?? 0
+      const end = seg.endIdx ?? start
+      const avgPace = avgInRange(pace, start, end)
+      const avgHr = avgInRange(hr, start, end)
+      return {
+        key: `${seg.label || 'Segment'}-${idx}`,
+        label: seg.label || `Segment ${idx + 1}`,
+        pace: formatPace(avgPace),
+        hr: Number.isFinite(avgHr) ? Math.round(avgHr) : null,
+      }
+    })
+    .filter((s) => s.pace != null || s.hr != null)
+})
 </script>
 
 <template>
@@ -109,6 +148,27 @@ const chartSegments = computed(() => toChartBands(trackPoints.value, coloredTrac
         title="Elevation"
         y-label="m"
       />
+    </section>
+
+    <section v-if="segmentComparisons.length" style="margin-top: 16px">
+      <h3>Segment comparison</h3>
+      <p style="color: #555">Averages are based on the current track coloring.</p>
+      <table style="border-collapse: collapse; width: 100%; max-width: 640px">
+        <thead>
+          <tr>
+            <th style="text-align: left; padding: 6px 8px; border-bottom: 1px solid #ccc">Segment</th>
+            <th style="text-align: left; padding: 6px 8px; border-bottom: 1px solid #ccc">Pace (min/km)</th>
+            <th style="text-align: left; padding: 6px 8px; border-bottom: 1px solid #ccc">Heart rate (bpm)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="row in segmentComparisons" :key="row.key">
+            <td style="padding: 6px 8px; border-bottom: 1px solid #eee">{{ row.label }}</td>
+            <td style="padding: 6px 8px; border-bottom: 1px solid #eee">{{ row.pace ?? '—' }}</td>
+            <td style="padding: 6px 8px; border-bottom: 1px solid #eee">{{ row.hr ?? '—' }}</td>
+          </tr>
+        </tbody>
+      </table>
     </section>
   </div>
 </template>
