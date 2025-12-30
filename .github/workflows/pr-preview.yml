@@ -1,0 +1,215 @@
+name: PR Preview Environments
+
+on:
+  pull_request_target:
+    types: [opened, reopened, synchronize, ready_for_review, closed]
+  workflow_dispatch:
+  schedule:
+    - cron: "0 5 * * *"
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_BACKEND: ghcr.io/tazyvova/trackandfeel-backend
+  IMAGE_FRONTEND: ghcr.io/tazyvova/trackandfeel-frontend
+  PREVIEW_INGRESS_NETWORK: trackandfeel-preview
+  PREVIEW_TTL_DAYS: 7
+
+jobs:
+  build-and-push:
+    if: github.event_name == 'pull_request_target' && github.event.action != 'closed'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      pull-requests: read
+    steps:
+      - name: Checkout PR code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build & push backend preview image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./backend
+          build-args: COMMIT=${{ github.event.pull_request.head.sha }}
+          push: true
+          tags: |
+            ${{ env.IMAGE_BACKEND }}:pr-${{ github.event.pull_request.number }}
+
+      - name: Build & push frontend preview image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./frontend
+          build-args: COMMIT=${{ github.event.pull_request.head.sha }}
+          push: true
+          tags: |
+            ${{ env.IMAGE_FRONTEND }}:pr-${{ github.event.pull_request.number }}
+
+  deploy-preview:
+    if: github.event_name == 'pull_request_target' && github.event.action != 'closed'
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            docker-compose.preview.yml
+            docker-compose.prod.yml
+            Caddyfile
+          sparse-checkout-cone-mode: false
+
+      - name: Upload infra files to server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.VDS_HOST }}
+          username: ${{ secrets.VDS_USER }}
+          key: ${{ secrets.VDS_SSH_KEY }}
+          passphrase: ${{ secrets.VDS_SSH_PASSPHRASE }}
+          source: "docker-compose.preview.yml,docker-compose.prod.yml,Caddyfile"
+          target: ${{ secrets.VDS_WORKDIR }}
+          overwrite: true
+
+      - name: Deploy preview stack
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VDS_HOST }}
+          username: ${{ secrets.VDS_USER }}
+          key: ${{ secrets.VDS_SSH_KEY }}
+          passphrase: ${{ secrets.VDS_SSH_PASSPHRASE }}
+          script_stop: true
+          command_timeout: 20m
+          script: |
+            set -euo pipefail
+            cd "${{ secrets.VDS_WORKDIR }}"
+
+            PR_NUMBER=${{ github.event.pull_request.number }}
+            PROJECT_NAME="trackandfeel-pr-${PR_NUMBER}"
+            PREVIEW_DOMAIN=${{ secrets.PREVIEW_DOMAIN }}
+            IMAGE_TAG="pr-${PR_NUMBER}"
+            NETWORK_NAME=${PREVIEW_INGRESS_NETWORK:-trackandfeel-preview}
+
+            if [ -z "${PREVIEW_DOMAIN}" ]; then
+              echo "PREVIEW_DOMAIN secret is required for preview deployments" >&2
+              exit 1
+            fi
+
+            echo "Creating ingress network ${NETWORK_NAME} if missing"
+            docker network create "${NETWORK_NAME}" >/dev/null 2>&1 || docker network inspect "${NETWORK_NAME}" >/dev/null
+
+            cat <<EOF_ENV > ".env.pr-${PR_NUMBER}"
+            DB_NAME=${{ secrets.DB_NAME }}
+            DB_USER=${{ secrets.DB_USER }}
+            DB_PASSWORD=${{ secrets.DB_PASSWORD }}
+            IMAGE_TAG=${IMAGE_TAG}
+            PR_NUMBER=${PR_NUMBER}
+            COMMIT=${{ github.event.pull_request.head.sha }}
+            PREVIEW_INGRESS_NETWORK=${NETWORK_NAME}
+            EOF_ENV
+
+            echo "Logging into GHCR"
+            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+
+            echo "Starting preview stack ${PROJECT_NAME}"
+            docker compose -p "${PROJECT_NAME}" -f docker-compose.preview.yml --env-file .env.pr-${PR_NUMBER} pull
+            docker compose -p "${PROJECT_NAME}" -f docker-compose.preview.yml --env-file .env.pr-${PR_NUMBER} up -d --no-build --force-recreate
+
+            echo "Refreshing main Caddy with wildcard preview config"
+            PREVIEW_DOMAIN="${PREVIEW_DOMAIN}" PREVIEW_INGRESS_NETWORK="${NETWORK_NAME}" docker compose -f docker-compose.prod.yml up -d caddy
+            docker exec trackandfeel-caddy caddy reload --config /etc/caddy/Caddyfile || true
+
+      - name: Post preview URL
+        uses: actions/github-script@v7
+        env:
+          PREVIEW_DOMAIN: ${{ secrets.PREVIEW_DOMAIN }}
+        with:
+          script: |
+            const pr = context.payload.pull_request.number;
+            const url = `https://pr-${pr}.${process.env.PREVIEW_DOMAIN}`;
+            const body = `🚀 Preview available at **${url}**\n\nProject: trackandfeel-pr-${pr}`;
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: pr,
+              body,
+            });
+
+  teardown-preview:
+    if: github.event_name == 'pull_request_target' && github.event.action == 'closed'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Remove preview stack and images
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VDS_HOST }}
+          username: ${{ secrets.VDS_USER }}
+          key: ${{ secrets.VDS_SSH_KEY }}
+          passphrase: ${{ secrets.VDS_SSH_PASSPHRASE }}
+          script_stop: true
+          script: |
+            set -euo pipefail
+            cd "${{ secrets.VDS_WORKDIR }}"
+
+            PR_NUMBER=${{ github.event.pull_request.number }}
+            PROJECT_NAME="trackandfeel-pr-${PR_NUMBER}"
+
+            echo "Stopping preview stack ${PROJECT_NAME}"
+            docker compose -p "${PROJECT_NAME}" -f docker-compose.preview.yml down -v --remove-orphans || true
+
+            echo "Removing preview images"
+            docker image rm ${IMAGE_BACKEND:-ghcr.io/tazyvova/trackandfeel-backend}:pr-${PR_NUMBER} || true
+            docker image rm ${IMAGE_FRONTEND:-ghcr.io/tazyvova/trackandfeel-frontend}:pr-${PR_NUMBER} || true
+
+  gc-previews:
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Garbage collect stale preview stacks
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VDS_HOST }}
+          username: ${{ secrets.VDS_USER }}
+          key: ${{ secrets.VDS_SSH_KEY }}
+          passphrase: ${{ secrets.VDS_SSH_PASSPHRASE }}
+          script_stop: true
+          command_timeout: 20m
+          script: |
+            set -euo pipefail
+            cd "${{ secrets.VDS_WORKDIR }}"
+
+            TTL_DAYS=${PREVIEW_TTL_DAYS:-7}
+            CUTOFF=$(date -d "${TTL_DAYS} days ago" +%s)
+            echo "Collecting stacks older than ${TTL_DAYS} days (cutoff ${CUTOFF})"
+
+            for container in $(docker ps -a --format '{{.Names}}' | grep 'trackandfeel-pr-[0-9]\+-backend' || true); do
+              CREATED=$(docker inspect -f '{{.Created}}' "$container")
+              CREATED_TS=$(date -d "$CREATED" +%s)
+              if [ "$CREATED_TS" -lt "$CUTOFF" ]; then
+                PR_ID=$(echo "$container" | sed -E 's/.*pr-([0-9]+)-backend/\1/')
+                PROJECT_NAME="trackandfeel-pr-${PR_ID}"
+                echo "Pruning ${PROJECT_NAME} (created ${CREATED})"
+                docker compose -p "${PROJECT_NAME}" -f docker-compose.preview.yml down -v --remove-orphans || true
+                docker image rm ${IMAGE_BACKEND:-ghcr.io/tazyvova/trackandfeel-backend}:pr-${PR_ID} || true
+                docker image rm ${IMAGE_FRONTEND:-ghcr.io/tazyvova/trackandfeel-frontend}:pr-${PR_ID} || true
+              fi
+            done
