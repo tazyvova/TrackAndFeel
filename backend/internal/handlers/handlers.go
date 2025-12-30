@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"TrackAndFeel/backend/internal/gpx"
+	"TrackAndFeel/backend/internal/series"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
@@ -206,6 +207,7 @@ func GetActivityTrack(pool *pgxpool.Pool) http.Handler {
 		ele := make([]*float64, 0, len(points))
 		hr := make([]*int, 0, len(points))
 		spd := make([]*float64, 0, len(points))
+		pace := make([]*float64, 0, len(points))
 
 		for _, p := range points {
 			coords = append(coords, [2]float64{p.Lon, p.Lat})
@@ -214,6 +216,8 @@ func GetActivityTrack(pool *pgxpool.Pool) http.Handler {
 			hr = append(hr, p.HR)
 			spd = append(spd, p.Spd)
 		}
+
+		pace = series.SpeedToPaceMinPerKm(spd)
 
 		resp := map[string]any{
 			"id": actID.String(),
@@ -234,10 +238,11 @@ func GetActivityTrack(pool *pgxpool.Pool) http.Handler {
 				"properties": map[string]any{},
 			},
 			"series": map[string]any{
-				"time_iso":  timeISO,
-				"elevation": ele,
-				"hr":        hr,
-				"speed_mps": spd,
+				"time_iso":        timeISO,
+				"elevation":       ele,
+				"hr":              hr,
+				"speed_mps":       spd,
+				"pace_min_per_km": pace,
 			},
 		}
 
