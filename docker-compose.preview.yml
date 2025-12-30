@@ -29,7 +29,7 @@ services:
     expose:
       - "8080"
     networks:
-      - default
+      default:
       preview_ingress:
         aliases:
           - pr-${PR_NUMBER}-backend
@@ -44,7 +44,7 @@ services:
     expose:
       - "80"
     networks:
-      - default
+      default:
       preview_ingress:
         aliases:
           - pr-${PR_NUMBER}-frontend
