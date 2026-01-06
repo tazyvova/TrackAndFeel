@@ -5,6 +5,7 @@ services:
       POSTGRES_DB: ${DB_NAME:-training}
       POSTGRES_USER: ${DB_USER:-postgres}
       POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+      POSTGRES_HOST_AUTH_METHOD: ${POSTGRES_HOST_AUTH_METHOD:-trust}
     volumes:
       - db_data:/var/lib/postgresql/data
     healthcheck:
