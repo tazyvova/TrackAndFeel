@@ -36,7 +36,7 @@ Set these repository secrets to enable the workflow:
 
 - `VDS_HOST`, `VDS_USER`, `VDS_SSH_KEY`, `VDS_SSH_PASSPHRASE`, `VDS_WORKDIR` – reused from the existing deploy workflows.
 - `DB_NAME`, `DB_USER`, `DB_PASSWORD` – credentials for the preview Postgres containers.
-- `PREVIEW_DOMAIN` – the wildcard domain (e.g. `preview.example.com`) pointing DNS `*.PREVIEW_DOMAIN` to the product server.
+- `PREVIEW_DOMAIN` – the wildcard domain (e.g. `preview.example.com`) pointing DNS `*.PREVIEW_DOMAIN` to the product server. Defaults to `preview.local` for local runs to avoid empty Compose interpolations.
 
 Add these values to the server’s `.env` (or export before running compose):
 
