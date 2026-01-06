@@ -43,8 +43,8 @@
   encode zstd gzip
 }
 
-*.{$PREVIEW_DOMAIN} {
-  @preview host_regexp prHost ^pr-(?P<prnum>[0-9]+)\.{$PREVIEW_DOMAIN}$
+*.{$PREVIEW_DOMAIN:preview.local} {
+  @preview host_regexp prHost ^pr-(?P<prnum>[0-9]+)\.{$PREVIEW_DOMAIN:preview.local}$
 
   route @preview {
     import api-routes pr-{http.regexp.prnum}-backend:8080
