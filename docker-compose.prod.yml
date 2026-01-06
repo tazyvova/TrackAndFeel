@@ -59,7 +59,7 @@ services:
     environment:
       DOMAIN: ${DOMAIN}
       ACME_EMAIL: ${ACME_EMAIL}
-      PREVIEW_DOMAIN: ${PREVIEW_DOMAIN:-preview.local}
+      PREVIEW_DOMAIN: ${PREVIEW_DOMAIN}
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       # Static files served directly by Caddy (optional optimization):
