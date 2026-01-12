@@ -1,6 +1,6 @@
 name: Cleanup PR 32 Volume
 on: 
-  workflow_dispatch:
+on: [push]
 
 jobs:
   nuke:
