@@ -1,0 +1,32 @@
+name: Cleanup PR 32 Volume
+on: 
+  workflow_dispatch:
+
+jobs:
+  nuke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VDS_HOST }}
+          username: ${{ secrets.VDS_USER }}
+          key: ${{ secrets.VDS_SSH_KEY }}
+          passphrase: ${{ secrets.VDS_SSH_PASSPHRASE }}
+          script: |
+            cd "${{ secrets.VDS_WORKDIR }}"
+            echo "Forcing teardown of PR 32 volume..."
+            # We explicitly target the volume name if known, but down -v is safer if compose file matches
+            # Since we don't have the compose file on the server in a guaranteed state (teardown usually removes it?)
+            # Wait, deploy-preview UPLOADS it. So it should be there.
+            
+            # Re-upload the preview file just in case it was deleted
+            # But we can't easily upload from here without checkout.
+            # However, the volume persists even if file is gone.
+            
+            # Prune standard naming convention
+            docker volume rm trackandfeel-pr-32_db_data || true
+            
+            # Also try via compose if the project exists
+            docker compose -p trackandfeel-pr-32 down -v --remove-orphans || true
+            
+            echo "Cleanup Done."
