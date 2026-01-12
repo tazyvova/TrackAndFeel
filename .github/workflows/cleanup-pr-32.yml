@@ -1,6 +1,6 @@
 name: Cleanup PR 32 Volume
 on: 
-on: [push]
+on: push
 
 jobs:
   nuke:
