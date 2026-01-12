@@ -126,20 +126,6 @@ jobs:
             PREVIEW_DOMAIN="${PREVIEW_DOMAIN}" PREVIEW_INGRESS_NETWORK="${NETWORK_NAME}" docker compose -f docker-compose.prod.yml up -d caddy
             docker exec trackandfeel-caddy caddy reload --config /etc/caddy/Caddyfile || true
 
-      - name: Debug - Dump DB logs on failure
-        if: failure()
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.VDS_HOST }}
-          username: ${{ secrets.VDS_USER }}
-          key: ${{ secrets.VDS_SSH_KEY }}
-          passphrase: ${{ secrets.VDS_SSH_PASSPHRASE }}
-          script: |
-            cd "${{ secrets.VDS_WORKDIR }}"
-            PR_NUMBER=${{ github.event.pull_request.number }}
-            echo "=== DB CONTAINER LOGS ==="
-            docker compose -p "trackandfeel-pr-${PR_NUMBER}" -f docker-compose.preview.yml logs db
-            echo "=== END DB LOGS ==="
 
 
       - name: Post preview URL
