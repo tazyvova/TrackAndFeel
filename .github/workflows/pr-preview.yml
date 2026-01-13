@@ -105,15 +105,25 @@ jobs:
             echo "Creating ingress network ${NETWORK_NAME} if missing"
             docker network create "${NETWORK_NAME}" || true
 
+            # Only write DB credentials if secrets are configured
+            # Otherwise, let docker-compose defaults take effect
             cat <<EOF_ENV > ".env.pr-${PR_NUMBER}"
-            DB_NAME=${{ secrets.DB_NAME }}
-            DB_USER=${{ secrets.DB_USER }}
-            DB_PASSWORD=${{ secrets.DB_PASSWORD }}
             IMAGE_TAG=${IMAGE_TAG}
             PR_NUMBER=${PR_NUMBER}
             COMMIT=${{ github.event.pull_request.head.sha }}
             PREVIEW_INGRESS_NETWORK=${NETWORK_NAME}
             EOF_ENV
+            
+            # Append DB credentials only if they exist
+            if [ -n "${{ secrets.DB_NAME }}" ]; then
+              echo "DB_NAME=${{ secrets.DB_NAME }}" >> ".env.pr-${PR_NUMBER}"
+            fi
+            if [ -n "${{ secrets.DB_USER }}" ]; then
+              echo "DB_USER=${{ secrets.DB_USER }}" >> ".env.pr-${PR_NUMBER}"
+            fi
+            if [ -n "${{ secrets.DB_PASSWORD }}" ]; then
+              echo "DB_PASSWORD=${{ secrets.DB_PASSWORD }}" >> ".env.pr-${PR_NUMBER}"
+            fi
 
             echo "Logging into GHCR"
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
