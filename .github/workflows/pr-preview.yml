@@ -131,6 +131,23 @@ jobs:
             echo "Starting preview stack ${PROJECT_NAME}"
             docker compose -p "${PROJECT_NAME}" -f docker-compose.preview.yml --env-file .env.pr-${PR_NUMBER} pull
             docker compose -p "${PROJECT_NAME}" -f docker-compose.preview.yml --env-file .env.pr-${PR_NUMBER} up -d --no-build --force-recreate
+            
+            echo "=== DIAGNOSTICS ==="
+            echo "Generated .env file contents:"
+            cat ".env.pr-${PR_NUMBER}"
+            echo ""
+            echo "Container status:"
+            docker compose -p "${PROJECT_NAME}" -f docker-compose.preview.yml ps
+            echo ""
+            echo "DB container environment:"
+            docker compose -p "${PROJECT_NAME}" -f docker-compose.preview.yml exec -T db env | grep -E "POSTGRES_|DB_" || true
+            echo ""
+            echo "Waiting 10 seconds for containers to stabilize..."
+            sleep 10
+            echo "Final container status:"
+            docker compose -p "${PROJECT_NAME}" -f docker-compose.preview.yml ps
+            echo "=== END DIAGNOSTICS ==="
+
 
             echo "Refreshing main Caddy with wildcard preview config"
             PREVIEW_DOMAIN="${PREVIEW_DOMAIN}" PREVIEW_INGRESS_NETWORK="${NETWORK_NAME}" docker compose -f docker-compose.prod.yml up -d caddy
