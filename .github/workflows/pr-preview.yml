@@ -1,7 +1,7 @@
 name: PR Preview Environments
 
 on:
-  pull_request_target:
+  pull_request:
     types: [opened, reopened, synchronize, ready_for_review, closed]
   workflow_dispatch:
   schedule:
