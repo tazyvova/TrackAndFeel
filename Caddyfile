@@ -43,30 +43,7 @@
   encode zstd gzip
 }
 
-*.{$PREVIEW_DOMAIN:preview.local} {
-  @preview host_regexp prHost ^pr-(?P<prnum>[0-9]+)\.{$PREVIEW_DOMAIN:preview.local}$
 
-  route @preview {
-    import api-routes pr-{http.regexp.prnum}-backend:8080
-
-    handle /frontend-version {
-      reverse_proxy pr-{http.regexp.prnum}-frontend:80
-    }
-
-    handle {
-      reverse_proxy pr-{http.regexp.prnum}-frontend:80
-    }
-  }
-
-  header {
-    Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
-    X-Content-Type-Options "nosniff"
-    X-Frame-Options "DENY"
-    Referrer-Policy "strict-origin-when-cross-origin"
-  }
-
-  encode zstd gzip
-}
 
 localhost {
   route {
