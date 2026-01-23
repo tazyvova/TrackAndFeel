@@ -66,6 +66,13 @@ jobs:
           script: |
             set -euo pipefail
             cd "${{ secrets.VDS_WORKDIR }}"
+            
+            # Load local environment if it exists (Lightweight approach)
+            if [ -f .env ]; then
+              echo "✅ Loading environment from $(pwd)/.env"
+              export $(grep -v '^#' .env | xargs)
+            fi
+
             export COMMIT=${{ github.event.workflow_run.head_sha }}
             NEW_TAG="sha-${COMMIT:0:7}"
 
@@ -97,38 +104,50 @@ jobs:
 
             validate_deployment() {
               set +e
-              for i in {1..30}; do
-                if curl -ks https://open.trackpace.twc1.net/healthz | grep -q "ok"; then
-                  echo "Services are ready"
+              echo "Starting health check loop..."
+              for i in {1..20}; do
+                # Use -f to fail on 4xx/5xx, -s for silent
+                HEALTH=$(curl -ksf https://${DOMAIN}/healthz 2>&1)
+                if [ $? -eq 0 ]; then
+                  echo "✅ Services are responsive (healthz: ok)"
                   break
                 fi
-                echo "Waiting for services... ($i/30)"
+                echo "⏳ Waiting for services... ($i/20) - Error: $HEALTH"
                 sleep 10
               done
-              if [ $i -eq 30 ]; then
-                echo "Services did not become ready in time"
+
+              if [ $i -eq 20 ]; then
+                echo "❌ Error: Services did not become ready in time"
+                docker compose -f docker-compose.prod.yml ps
+                docker compose -f docker-compose.prod.yml logs --tail=20
                 set -e
                 return 1
               fi
 
-              DEPLOYED_VERSION=$(curl -ks https://open.trackpace.twc1.net/version)
-              echo "Deployed backend version: '$DEPLOYED_VERSION'"
               EXPECTED_VERSION=$COMMIT
-              echo "Expected version: '$EXPECTED_VERSION'"
+              echo "Verifying versions (Expected: ${EXPECTED_VERSION:0:7})..."
+
+              DEPLOYED_VERSION=$(curl -ksf https://${DOMAIN}/version)
+              echo "Backend version: '$DEPLOYED_VERSION'"
               if [ "$DEPLOYED_VERSION" != "$EXPECTED_VERSION" ]; then
-                echo "Backend version mismatch: deployed=$DEPLOYED_VERSION, expected=$EXPECTED_VERSION"
+                echo "❌ Backend version mismatch!"
+                echo "   Got:      $DEPLOYED_VERSION"
+                echo "   Expected: $EXPECTED_VERSION"
                 set -e
                 return 1
               fi
 
-              FRONTEND_VERSION=$(curl -ks https://open.trackpace.twc1.net/frontend-version)
-              echo "Deployed frontend version: '$FRONTEND_VERSION'"
+              FRONTEND_VERSION=$(curl -ksf https://${DOMAIN}/frontend-version)
+              echo "Frontend version: '$FRONTEND_VERSION'"
               if [ "$FRONTEND_VERSION" != "$EXPECTED_VERSION" ]; then
-                echo "Frontend version mismatch: deployed=$FRONTEND_VERSION, expected=$EXPECTED_VERSION"
+                echo "❌ Frontend version mismatch!"
+                echo "   Got:      $FRONTEND_VERSION"
+                echo "   Expected: $EXPECTED_VERSION"
                 set -e
                 return 1
               fi
-              echo "Deployment verified: backend $DEPLOYED_VERSION, frontend $FRONTEND_VERSION"
+
+              echo "✅ Deployment verified successfully!"
               set -e
               return 0
             }

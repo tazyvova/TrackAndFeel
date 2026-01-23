@@ -17,9 +17,6 @@ services:
 
   backend:
     image: ghcr.io/tazyvova/trackandfeel-backend:${IMAGE_TAG:-latest}
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
     container_name: trackandfeel-backend
     environment:
       PORT: "8080"
@@ -37,7 +34,6 @@ services:
 
   frontend:
     image: ghcr.io/tazyvova/trackandfeel-frontend:${IMAGE_TAG:-latest}
-    build: { context: ./frontend, dockerfile: Dockerfile }
     # no public ports needed; Caddy will serve the files
     volumes:
       - frontend_dist:/usr/share/nginx/html
