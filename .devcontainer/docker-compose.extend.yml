@@ -1,9 +1,14 @@
 services:
-  backend:
+  devcontainer:
+    image: mcr.microsoft.com/devcontainers/base:ubuntu
     volumes:
       - ..:/workspace:cached
+      - /var/run/docker.sock:/var/run/docker.sock
     working_dir: /workspace
-    # Keep the container running so we can attach to it
+    # Keep the container running
     command: /bin/sh -c "while sleep 1000; do :; done"
-    # Ensure the dev container can see the host's docker daemon for act
-    # (Though the feature should handle this, it's good to be explicit if needed)
+    # Ensure app services are available
+    depends_on:
+      - backend
+      - db
+      - frontend

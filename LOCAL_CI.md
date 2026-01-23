@@ -1,18 +1,19 @@
 # Local CI/CD with `act`
 
-This project supports running GitHub Actions locally using [`act`](https://github.com/nektos/act). This is pre-installed in the Dev Container.
+This project is configured with a dedicated **Dev Container** that has [`act`](https://github.com/nektos/act) pre-installed.
 
-## Prerequisites
+## How to use it
 
-- Docker must be running on your host machine.
-- You should be inside the Dev Container.
+1.  **Open in Dev Container**: 
+    - Press `F1` (or `Ctrl+Shift+P`).
+    - Type **"Dev Containers: Reopen in Container"** and press Enter.
+    - Wait for the build to finish. You will know you are inside when the bottom-left corner of VS Code says **"Dev Container: TrackAndFeel Dev"**.
+
+2.  **Open Terminal**: 
+    - Once inside, open a new terminal (`Ctrl+` `).
+    - You are now in a Linux environment with all tools ready.
 
 ## Running Workflows
-
-To see all available workflows, run:
-```bash
-act --list
-```
 
 ### Simulate a Pull Request
 

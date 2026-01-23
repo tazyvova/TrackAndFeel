@@ -4,17 +4,9 @@
     "../docker-compose.yml",
     "docker-compose.extend.yml"
   ],
-  "service": "backend",
+  "service": "devcontainer",
   "workspaceFolder": "/workspace",
   "features": {
-    "ghcr.io/devcontainers/features/node:1": {
-      "version": "20"
-    },
-    "ghcr.io/devcontainers/features/docker-outside-of-docker:1": {
-      "version": "latest",
-      "enableNonRootDocker": "true",
-      "moby": "true"
-    },
     "ghcr.io/devcontainers/features/github-cli:1": {
       "version": "latest"
     }
@@ -30,6 +22,5 @@
       ]
     }
   },
-  "postCreateCommand": "bash .devcontainer/post-create.sh",
-  "remoteUser": "root"
+  "postCreateCommand": "sudo curl -s https://raw.githubusercontent.com/nektos/act/master/install.sh | sudo bash && sudo mv bin/act /usr/local/bin/"
 }
