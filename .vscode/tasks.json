@@ -10,8 +10,14 @@
       "presentation": { "reveal": "always", "panel": "dedicated" },
       "problemMatcher": {
         "owner": "vite",
-        "fileLocation": "auto",
-        "pattern": [{ "regexp": "." }],
+        "fileLocation": "relative",
+        "pattern": {
+          "regexp": "^(.*?):(\\d+):(\\d+):\\s+(.*)$",
+          "file": 1,
+          "line": 2,
+          "column": 3,
+          "message": 4
+        },
         "background": {
           "activeOnStart": true,
           "beginsPattern": ".*(VITE|vite).*",

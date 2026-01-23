@@ -24,8 +24,16 @@ pnpm-debug.log*
 # Go (backend)
 backend/bin/
 backend/tmp/
+backend/server
+backend/trackandfeel-backend
+backend/vds-backend
 coverage.out
+
+# Simulation
+vds_sim/
+*.log
 
 samples/
 
 trackandfeel_*.tgz
+go1.23.5.linux-amd64.tar.gz
