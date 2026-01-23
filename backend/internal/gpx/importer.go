@@ -64,7 +64,7 @@ func Import(ctx context.Context, pool *pgxpool.Pool, f multipart.File) (uuid.UUI
 	}
 	var g gpxFile
 	if err := xml.Unmarshal(raw, &g); err != nil {
-		return uuid.Nil, fmt.Errorf("xml unmarshal: %w", err)
+		return uuid.Nil, fmt.Errorf("xml unmarshal (raw size %d): %w", len(raw), err)
 	}
 
 	// flatten points

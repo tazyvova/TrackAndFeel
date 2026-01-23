@@ -3,6 +3,7 @@ package handlers
 import (
 	"encoding/json"
 	"errors"
+	"log"
 	"net/http"
 	"path/filepath"
 	"strconv"
@@ -40,6 +41,7 @@ func Upload(pool *pgxpool.Pool) http.Handler {
 
 		actID, err := gpx.Import(r.Context(), pool, file)
 		if err != nil {
+			log.Printf("ERROR: failed to import gpx from %s: %v", hdr.Filename, err)
 			http.Error(w, "failed to import gpx", http.StatusInternalServerError)
 			return
 		}
