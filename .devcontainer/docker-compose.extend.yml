@@ -7,8 +7,3 @@ services:
     working_dir: /workspace
     # Keep the container running
     command: /bin/sh -c "while sleep 1000; do :; done"
-    # Ensure app services are available
-    depends_on:
-      - backend
-      - db
-      - frontend
