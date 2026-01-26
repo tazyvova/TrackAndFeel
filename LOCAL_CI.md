@@ -13,6 +13,18 @@ This project is configured with a dedicated **Dev Container** that has [`act`](h
     - Once inside, open a new terminal (`Ctrl+` `).
     - You are now in a Linux environment with all tools ready.
 
+## Starting App Services
+
+By default, the application containers (`backend`, `frontend`, `db`) are **not** started to keep the environment fast.
+To start them:
+```bash
+docker compose up -d
+```
+To stop them:
+```bash
+docker compose stop
+```
+
 ## Running Workflows
 
 To see all available workflows, run:
