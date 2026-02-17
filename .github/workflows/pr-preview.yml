@@ -139,6 +139,37 @@ jobs:
             docker exec trackandfeel-caddy caddy reload --config /etc/caddy/Caddyfile || true
 
 
+      - name: Verify preview is reachable
+        env:
+          PREVIEW_DOMAIN: ${{ secrets.PREVIEW_DOMAIN }}
+        run: |
+          PR_NUMBER=${{ github.event.pull_request.number }}
+          URL="https://pr-${PR_NUMBER}.${PREVIEW_DOMAIN}"
+
+          echo "⏳ Waiting for preview at ${URL} ..."
+          for i in $(seq 1 9); do
+            if curl -fsSL --max-time 10 "${URL}/healthz" >/dev/null 2>&1; then
+              echo "✅ Backend /healthz responded OK (attempt ${i})"
+              break
+            fi
+            echo "  attempt ${i}/9 — not ready, retrying in 10s..."
+            sleep 10
+          done
+
+          # Final check — fail the job if still unreachable
+          echo "--- Frontend check ---"
+          curl -fsSL --max-time 10 "${URL}" > /dev/null
+          echo "✅ Frontend OK"
+
+          echo "--- Backend /healthz ---"
+          curl -fsSL --max-time 10 "${URL}/healthz"
+          echo ""
+          echo "✅ Backend OK"
+
+          echo "--- Backend /version ---"
+          curl -fsSL --max-time 10 "${URL}/version"
+          echo ""
+          echo "✅ All checks passed for ${URL}"
 
       - name: Post preview URL
         uses: actions/github-script@v7
@@ -148,7 +179,7 @@ jobs:
           script: |
             const pr = context.payload.pull_request.number;
             const url = `https://pr-${pr}.${process.env.PREVIEW_DOMAIN}`;
-            const body = `🚀 Preview available at [${url}](${url})\n\nProject: trackandfeel-pr-${pr}`;
+            const body = `🚀 Preview available at [${url}](${url})\n\n✅ Health checks passed\n\nProject: trackandfeel-pr-${pr}`;
 
             await github.rest.issues.createComment({
               owner: context.repo.owner,

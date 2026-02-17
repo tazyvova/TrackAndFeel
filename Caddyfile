@@ -1,5 +1,9 @@
 {
   email {$ACME_EMAIL}
+
+  on_demand_tls {
+    ask http://backend:8080/healthz
+  }
 }
 
 (api-routes) {
@@ -63,3 +67,34 @@ localhost {
   }
 }
 
+
+# PR preview subdomains — individual certs via on-demand TLS (HTTP-01 challenge)
+:443 {
+  tls {
+    on_demand
+  }
+
+  @preview host *.{$PREVIEW_DOMAIN}
+
+  handle @preview {
+    map {host} {pr_id} {
+      ~^pr-(\d+)\. "${1}"
+    }
+
+    handle /api/* {
+      reverse_proxy pr-{pr_id}-backend:8080
+    }
+
+    handle /healthz {
+      reverse_proxy pr-{pr_id}-backend:8080
+    }
+
+    handle /version {
+      reverse_proxy pr-{pr_id}-backend:8080
+    }
+
+    handle {
+      reverse_proxy pr-{pr_id}-frontend:80
+    }
+  }
+}
