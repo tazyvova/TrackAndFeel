@@ -37,3 +37,7 @@ samples/
 
 trackandfeel_*.tgz
 go1.23.5.linux-amd64.tar.gz
+
+# Local Agent files
+agents.md
+
