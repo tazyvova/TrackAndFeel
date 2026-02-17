@@ -147,7 +147,7 @@ jobs:
         with:
           script: |
             const pr = context.payload.pull_request.number;
-            const url = `https://pr-${pr}.${process.env.PREVIEW_DOMAIN}`;
+            const url = `http://pr-${pr}.${process.env.PREVIEW_DOMAIN}`;
             const body = `🚀 Preview available at [${url}](${url})\n\nProject: trackandfeel-pr-${pr}`;
 
             await github.rest.issues.createComment({
