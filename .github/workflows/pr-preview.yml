@@ -148,7 +148,7 @@ jobs:
           script: |
             const pr = context.payload.pull_request.number;
             const url = `https://pr-${pr}.${process.env.PREVIEW_DOMAIN}`;
-            const body = `🚀 Preview available at **${url}**\n\nProject: trackandfeel-pr-${pr}`;
+            const body = `🚀 Preview available at [${url}](${url})\n\nProject: trackandfeel-pr-${pr}`;
 
             await github.rest.issues.createComment({
               owner: context.repo.owner,
