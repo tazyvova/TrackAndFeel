@@ -1,5 +1,10 @@
 {
   email {$ACME_EMAIL}
+
+  on_demand_tls {
+    interval 2m
+    burst    5
+  }
 }
 
 (api-routes) {
@@ -64,25 +69,33 @@ localhost {
 }
 
 
-# Wildcard subdomain for PR previews (HTTP only — no TLS needed for ephemeral previews)
-http://*.{$PREVIEW_DOMAIN} {
-  map {host} {pr_id} {
-    ~^pr-(\d+)\. "${1}"
+# PR preview subdomains — individual certs via on-demand TLS (HTTP-01 challenge)
+:443 {
+  tls {
+    on_demand
   }
 
-  handle /api/* {
-    reverse_proxy pr-{pr_id}-backend:8080
-  }
+  @preview host *.{$PREVIEW_DOMAIN}
 
-  handle /healthz {
-    reverse_proxy pr-{pr_id}-backend:8080
-  }
+  handle @preview {
+    map {host} {pr_id} {
+      ~^pr-(\d+)\. "${1}"
+    }
 
-  handle /version {
-    reverse_proxy pr-{pr_id}-backend:8080
-  }
+    handle /api/* {
+      reverse_proxy pr-{pr_id}-backend:8080
+    }
 
-  handle {
-    reverse_proxy pr-{pr_id}-frontend:80
+    handle /healthz {
+      reverse_proxy pr-{pr_id}-backend:8080
+    }
+
+    handle /version {
+      reverse_proxy pr-{pr_id}-backend:8080
+    }
+
+    handle {
+      reverse_proxy pr-{pr_id}-frontend:80
+    }
   }
 }
