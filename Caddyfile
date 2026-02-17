@@ -1,5 +1,10 @@
 {
   email {$ACME_EMAIL}
+  
+  on_demand_tls {
+    interval 2m
+    burst    5
+  }
 }
 
 (api-routes) {
@@ -66,6 +71,10 @@ localhost {
 
 # Wildcard subdomain for PR previews
 *.{$PREVIEW_DOMAIN} {
+  tls {
+    on_demand
+  }
+
   map {host} {pr_id} {
     ~^pr-(\d+)\. "${1}"
   }
