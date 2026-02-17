@@ -63,3 +63,26 @@ localhost {
   }
 }
 
+
+# Wildcard subdomain for PR previews
+*.{$PREVIEW_DOMAIN} {
+  map {host} {pr_id} {
+    ~^pr-(\d+)\. "${1}"
+  }
+
+  handle /api/* {
+    reverse_proxy pr-{pr_id}-backend:8080
+  }
+
+  handle /healthz {
+    reverse_proxy pr-{pr_id}-backend:8080
+  }
+
+  handle /version {
+    reverse_proxy pr-{pr_id}-backend:8080
+  }
+
+  handle {
+    reverse_proxy pr-{pr_id}-frontend:80
+  }
+}
