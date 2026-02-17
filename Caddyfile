@@ -1,10 +1,5 @@
 {
   email {$ACME_EMAIL}
-
-  on_demand_tls {
-    interval 2m
-    burst    5
-  }
 }
 
 (api-routes) {
