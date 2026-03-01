@@ -1,0 +1,38 @@
+{
+  "name": "TrackAndFeel Dev",
+  "dockerComposeFile": [
+    "../docker-compose.yml",
+    "docker-compose.extend.yml"
+  ],
+  "service": "devcontainer",
+  "runServices": ["db", "backend", "frontend", "devcontainer"],
+  "workspaceFolder": "/workspace",
+  "forwardPorts": [5173, 8080, 5432],
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "golang.Go",
+        "Vue.volar",
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        "ms-azuretools.vscode-docker",
+        "github.vscode-github-actions"
+      ],
+      "settings": {
+        "editor.formatOnSave": true,
+        "[go]": {
+          "editor.defaultFormatter": "golang.go"
+        },
+        "[vue]": {
+          "editor.defaultFormatter": "esbenp.prettier-vscode"
+        },
+        "[typescript]": {
+          "editor.defaultFormatter": "esbenp.prettier-vscode"
+        },
+        "files.eol": "\n",
+        "go.toolsManagement.autoUpdate": true
+      }
+    }
+  },
+  "postCreateCommand": "cd /workspace/frontend && npm ci"
+}
