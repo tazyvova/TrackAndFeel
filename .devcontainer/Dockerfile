@@ -10,7 +10,7 @@ RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
 
 # act (local CI runner)
 RUN curl -s https://raw.githubusercontent.com/nektos/act/master/install.sh | bash && \
-    mv bin/act /usr/local/bin/ && rmdir bin
+    mv bin/act /usr/local/bin/ && rm -rf bin
 
 # gh CLI
 RUN curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg \
