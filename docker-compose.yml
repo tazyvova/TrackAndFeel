@@ -7,7 +7,7 @@ services:
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: training
     ports:
-      - "5432:5432"            # host:container (optional if you access DB from host tools)
+      - "127.0.0.1:5432:5432"  # localhost only — never expose DB to the internet
     volumes:
       - dbdata:/var/lib/postgresql/data
     healthcheck:
@@ -31,7 +31,7 @@ services:
       DB_PASSWORD: postgres
       DB_NAME: training
     ports:
-      - "8080:8080"
+      - "127.0.0.1:8080:8080"
     depends_on:
       db:
         condition: service_healthy
@@ -44,7 +44,7 @@ services:
       - ./frontend:/app        # bind-mount so changes reflect instantly
     command: sh -c "npm ci || npm i && npm run dev -- --host 0.0.0.0"
     ports:
-      - "5173:5173"            # Vite dev server
+      - "127.0.0.1:5173:5173"  # Vite dev server — VS Code tunnels this automatically
     depends_on:
       - backend
 
